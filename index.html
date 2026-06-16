@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Field Prospecting</title>
+<style>
+:root {
+  --bg: #f8fafc; --surface: #fff; --border: #e2e8f0; --border-light: #f1f5f9;
+  --text: #0f172a; --muted: #64748b;
+  --blue: #2563eb; --blue-bg: #eff6ff;
+  --green: #16a34a; --green-bg: #f0fdf4;
+  --orange: #ea580c; --orange-bg: #fff7ed;
+  --red: #dc2626; --red-bg: #fef2f2;
+  --purple: #7c3aed; --purple-bg: #faf5ff;
+  --gold: #b45309; --gold-bg: #fef3c7;
+  --teal: #0f766e; --teal-bg: #f0fdfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+
+/* ── Header ── */
+.hdr { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 14px; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.hdr-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.logo { font-size: 17px; font-weight: 800; color: var(--blue); white-space: nowrap; }
+.plan-sel { flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 13px; font-weight: 500; }
+.filters { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.filters::-webkit-scrollbar { display: none; }
+.search { padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 13px; width: 140px; flex-shrink: 0; }
+.search:focus { outline: none; border-color: var(--blue); }
+.fsel { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: 12px; font-weight: 500; flex-shrink: 0; cursor: pointer; }
+
+/* ── View Tabs (Prospects / No-Visit) ── */
+.view-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+.vtab { flex: 1; padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+.vtab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.vtab .nvcount { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 10px; background: var(--green-bg); color: var(--green); margin-left: 4px; }
+
+/* ── Stats ── */
+.stats { background: var(--surface); border-bottom: 1px solid var(--border-light); padding: 6px 14px; display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; }
+.stats::-webkit-scrollbar { display: none; }
+.stat { display: flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.stat b { font-size: 15px; font-weight: 700; color: var(--text); }
+.stat b.bl { color: var(--blue); } .stat b.gr { color: var(--green); } .stat b.or { color: var(--orange); } .stat b.gd { color: var(--gold); }
+
+/* ── Grid ── */
+.grid { padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 10px; }
+
+/* ── Day section headers ── */
+.day-section { grid-column: 1 / -1; display: contents; }
+.day-header { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 8px 4px 4px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
+.day-label { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.day-count { font-size: 12px; color: var(--muted); opacity: .7; }
+.route-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #fff; background: #1a73e8; border-radius: 6px; padding: 4px 10px; text-decoration: none; white-space: nowrap; }
+.route-btn:hover { background: #1558b0; }
+
+/* ── Card ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: 10px; padding: 13px; }
+.card.sv { border-left-color: #818cf8; } .card.sf { border-left-color: var(--orange); }
+.card.sw { border-left-color: var(--green); } .card.sn { border-left-color: #f87171; }
+
+.card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.shop-name { font-size: 14px; font-weight: 700; line-height: 1.3; flex: 1; }
+.day-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+.dh { background: var(--green-bg); color: var(--green); }
+.d1 { background: var(--green-bg); color: var(--green); }
+.d2 { background: var(--blue-bg); color: var(--blue); }
+.d3 { background: var(--purple-bg); color: var(--purple); }
+.d4 { background: var(--orange-bg); color: var(--orange); }
+.d5 { background: var(--red-bg); color: var(--red); }
+.d6 { background: var(--teal-bg); color: var(--teal); }
+.d7 { background: var(--gold-bg); color: var(--gold); }
+.d8 { background: #fce7f3; color: #be185d; }
+.d9 { background: #e0f2fe; color: #0369a1; }
+.d10 { background: #ecfccb; color: #3f6212; }
+
+.addr { font-size: 12px; color: var(--muted); margin-bottom: 3px; line-height: 1.4; }
+.phone { font-size: 13px; font-weight: 600; color: var(--blue); text-decoration: none; display: block; margin-bottom: 7px; }
+.sig-notes { font-size: 11px; color: var(--muted); margin-bottom: 7px; line-height: 1.4; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px; }
+.tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+.tm { background: var(--teal-bg); color: var(--teal); }
+.ta { background: var(--blue-bg); color: var(--blue); }
+.tp { background: #dc2626; color: #bfdbfe; }
+.tb { background: #fbbf24; color: #111111; }
+.tM { background: var(--purple-bg); color: var(--purple); }
+.tq { background: var(--gold-bg); color: var(--gold); }
+.tc { background: var(--orange-bg); color: var(--orange); }
+.ts { background: var(--border-light); color: var(--muted); }
+
+/* Signal dots */
+.sig-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dots { display: flex; gap: 3px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+.dot.on { background: #fbbf24; } .dot.hi { background: var(--teal); }
+.sig-lbl { font-size: 11px; color: var(--muted); font-weight: 500; }
+
+/* Verify buttons */
+.verify { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+.vbtn { font-size: 10px; font-weight: 500; padding: 3px 7px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg); color: #94a3b8; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; opacity: 0.75; }
+.vbtn:active { background: var(--border-light); opacity: 1; }
+.vbtn.gd-btn { color: #94a3b8; border-color: var(--border-light); background: var(--bg); opacity: 0.75; }
+.vbtn.tb { background: #fbbf24; color: #111111; border-color: #fbbf24; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.vbtn.tp { background: #dc2626; color: #bfdbfe; border-color: #dc2626; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.tf  { background: #f97316; color: #ffffff; }
+.tfp { background: #1e293b; color: #f97316; }
+.te  { background: #1d4ed8; color: #fde68a; }
+.vbtn.tf  { background: #f97316; color: #ffffff; border-color: #f97316; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.vbtn.tfp { background: #1e293b; color: #f97316; border-color: #f97316; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.vbtn.te  { background: #1d4ed8; color: #fde68a; border-color: #1d4ed8; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.trp  { background: #16a34a; color: #ffffff; }
+.tcfx { background: #003087; color: #ffffff; }
+.vbtn.trp  { background: #16a34a; color: #ffffff; border-color: #16a34a; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.vbtn.tcfx { background: #003087; color: #ffffff; border-color: #003087; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.tac  { background: #4338ca; color: #ffffff; }
+.vbtn.tac { background: #4338ca; color: #ffffff; border-color: #4338ca; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+
+/* Actions */
+.actions { display: flex; gap: 6px; align-items: center; }
+.status-sel { flex: 1; padding: 5px 6px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 600; background: var(--surface); color: var(--text); cursor: pointer; }
+.notes-btn { width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--muted); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.notes-btn.has { background: var(--gold-bg); border-color: #fcd34d; color: var(--gold); }
+.notes-area { width: 100%; margin-top: 6px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; background: var(--bg); color: var(--text); resize: none; min-height: 50px; font-family: inherit; display: none; }
+.notes-area:focus { outline: none; border-color: var(--blue); }
+.notes-preview { margin-top: 5px; font-size: 11px; color: var(--gold); font-style: italic; cursor: pointer; }
+
+/* ── No-Visit List ── */
+.nv-grid { padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.nv-header { padding: 10px 14px 0; font-size: 12px; color: var(--muted); line-height: 1.5; }
+.nv-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--green); border-radius: 10px; padding: 12px; }
+.nv-name { font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.nv-city { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.nv-note { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.nv-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; margin-bottom: 4px; }
+.nv-confirmed { background: var(--green-bg); color: var(--green); }
+.nv-empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 13px; grid-column: 1/-1; }
+
+.empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 13px; grid-column: 1/-1; }
+
+@media (max-width: 500px) { .grid { grid-template-columns: 1fr; padding: 8px; gap: 8px; } .search { width: 120px; } .nv-grid { grid-template-columns: 1fr; padding: 8px; } }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="logo">⚡ Field Prospecting</div>
+    <select class="plan-sel" id="planSel"></select>
+  </div>
+  <div class="filters" id="prospectFilters">
+    <input class="search" id="searchInput" type="search" placeholder="Search…">
+    <select class="fsel" id="dayFilter">
+      <option value="all">All days</option>
+    </select>
+    <select class="fsel" id="statusFilter">
+      <option value="all">All status</option>
+      <option value="new">New</option>
+      <option value="visited">Visited</option>
+      <option value="followup">Follow-up</option>
+      <option value="won">Won</option>
+      <option value="not-interested">Not interested</option>
+      <option value="skip">Skip</option>
+    </select>
+    <select class="fsel" id="sigFilter">
+      <option value="all">All signals</option>
+      <option value="Mitchell">Mitchell★</option>
+      <option value="AutoTechIQ">AutoTechIQ</option>
+      <option value="MSO">MSO</option>
+      <option value="Marquee">Marquee</option>
+      <option value="BG">BG Products</option>
+      <option value="Technet">TechNet</option>
+      <option value="Fisher">Fisher</option>
+      <option value="FMP">FMP</option>
+      <option value="Euro">Euro Specialist</option>
+      <option value="RepairPal">RepairPal</option>
+      <option value="CARFAX">CARFAX</option>
+          <option value="Assoc">Assoc Member</option>
+    </select>
+  </div>
+</div>
+
+<div class="view-tabs">
+  <div class="vtab active" id="tabProspects" onclick="switchView('prospects')">🎯 Prospects</div>
+  <div class="vtab" id="tabNoVisit" onclick="switchView('novisit')">✅ Existing Customers <span class="nvcount" id="nvCount">0</span></div>
+</div>
+
+<div class="stats" id="statsBar">
+  <div class="stat"><b id="sTotal">–</b>&nbsp;stops</div>
+  <div class="stat"><b class="bl" id="sVisited">–</b>&nbsp;visited</div>
+  <div class="stat"><b class="or" id="sFollowup">–</b>&nbsp;follow-up</div>
+  <div class="stat"><b class="gr" id="sWon">–</b>&nbsp;won</div>
+  <div class="stat"><b class="gd" id="sMitchell">–</b>&nbsp;Mitchell signals</div>
+</div>
+
+<div class="grid" id="grid"></div>
+<div id="nvPanel" style="display:none">
+  <div class="nv-header" id="nvHeader"></div>
+  <div class="nv-grid" id="nvGrid"></div>
+</div>
+
+<script>
+const BG_LOGO = 'https://cdn.bfldr.com/AB44IBCB/at/vmfvqhxr96kr4qbmm66j28/BG_Logo21-RGB.svg';
+const TN_LOGO = 'https://www.technetprofessional.com/assets/TechNet_logo_en-39b523ae4bf8ffea4b41155d760c3d7808f160698483546b90fd75d2fc873666.svg';
+const FISHER_LOGO = 'https://www.federatedcc.com/images/federated-car-care-xxs.jpg';
+const FMP_LOGO    = 'https://fmppartnersnetwork.com/wp-content/uploads/2019/12/fmp-logo-new.png';
+const RP_LOGO  = 'https://repairpal.com/apple-touch-icon.png';
+const CFX_LOGO = 'https://www.carfax.com/img/carfax-logo.svg';
+
+// ─────────────────────────────────────────────────────────────
+// PLAN DATA — prospect shops
+// ─────────────────────────────────────────────────────────────
+const PLANS = {
+
+"Pittsburgh 1.5-Day": [
+  // ── Half-day (Airport → Robinson → Coraopolis → McKees Rocks → Bridgeville) ──
+  {id:"snyder-brothers",shop:"Snyder Brother's Automotive",day:"Half-day",address:"4695 Campbells Run Rd, Pittsburgh (Robinson) 15205",phone:"(412) 787-9300",tags:["AutoTechIQ","BG"],stars:"4.7",reviewInfo:"272 Birdeye",notes:"AAA-approved · family-run · Ford diesel specialty · off I-376 near airport"},
+  {id:"protech-coraopolis",shop:"Protech Auto Group — Coraopolis",day:"Half-day",address:"1101 4th Ave, Coraopolis 15108",phone:"(412) 264-8800",tags:["AutoTechIQ","MSO"],stars:"4.9",reviewInfo:"62 CARFAX",notes:"4-location MSO (Bellevue, Coraopolis, Bridgeville, Baden) · Goodyear/Dunlop tire dealer"},
+  {id:"h-w-auto",shop:"H & W Auto & Truck Service",day:"Half-day",address:"200 Kendall St, Coraopolis 15108",phone:"(412) 375-7554",tags:["Mitchell","Technet"],stars:"5.0",reviewInfo:"108 SureCritic",notes:"Courtesy shuttle + Wi-Fi — pro-shop posture · Mitchell1 + TechNet confirmed"},
+  {id:"pine-hollow",shop:"Pine Hollow Service",day:"Half-day",address:"877 Pine Hollow Rd #1961, McKees Rocks 15136",phone:"(412) 331-7700",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:null,notes:"Classic indie general repair · M-F 8–5"},
+  {id:"bridgeville-auto",shop:"Bridgeville Automotive",day:"Half-day",address:"2000 Painters Run Rd, Bridgeville 15241",phone:"(412) 221-9843",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:null,notes:"Since 1994 · Altvater family · I-79 corridor — natural bridge into South Hills"},
+
+  // ── Day 1 — South Hills CORE (Upper St. Clair → Bethel Park → Mt. Lebanon → Bridgeville → McMurray → East End) ──
+  {id:"calabro-tire",shop:"Calabro Tire & Auto Service",day:"Day 1",address:"1476 Bower Hill Rd, Upper St. Clair 15241",phone:"(412) 221-4300",tags:["Mitchell","Marquee"],stars:"5.0",reviewInfo:"1,088 SureCritic + Mitchell1 CRM confirmed",notes:"Since 1941 · Perry Calabro owner — flagship indie of the metro ★★ MARQUEE — start here"},
+  {id:"chucks-auto",shop:"Chuck's Complete Auto Service",day:"Day 1",address:"75 McMurray Rd, Upper St. Clair 15241",phone:"(412) 831-2510",tags:["BG"],stars:"5.0",reviewInfo:"162 CARFAX",notes:"ASE · BG confirmed · Upper St. Clair / Venetia — 3 min from Calabro's"},
+  {id:"bruce-brothers",shop:"Bruce Brothers Tire Pros",day:"Day 1",address:"100 Hillside Dr, Bethel Park 15102",phone:"(412) 835-5511",tags:["AutoTechIQ","BG"],stars:"4.9",reviewInfo:"769 CARFAX",notes:"Tire-led + full repair · very heavy review volume · BG confirmed"},
+  {id:"mcneilly-auto",shop:"McNeilly Automotive Service",day:"Day 1",address:"75 McNeilly Rd, Pittsburgh 15226",phone:"(412) 563-6198",tags:["AutoTechIQ","BG"],stars:"4.7",reviewInfo:null,notes:"Classic neighborhood indie · BG confirmed · Mt. Lebanon / Dormont corridor"},
+  {id:"mj-auto",shop:"MJ Automotive Service Center",day:"Day 1",address:"49 N Wren Dr, Pittsburgh 15243",phone:"(412) 275-3289",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:null,notes:"Since 1999 · foreign + domestic · Scott Township"},
+  {id:"ryan-pleasant-hills",shop:"Ryan Automotive — Pleasant Hills",day:"Day 1",address:"550 Clairton Blvd, Pleasant Hills 15236",phone:"(412) 653-1000",tags:["AutoTechIQ","MSO"],stars:"4.8",reviewInfo:"140 reviews",notes:"MSO — 2 locations (also Crafton) · PA inspection station"},
+  {id:"hamlins-auto",shop:"Hamlin's Automotive",day:"Day 1",address:"551 Mayer St, Bridgeville 15017",phone:"(412) 221-2100",tags:["AutoTechIQ","Caveat"],stars:"4.8",reviewInfo:"266 reviews",notes:"Since 1950 · body + mechanical confirmed · pair with Big G next door ⚠ verify general repair focus"},
+  {id:"big-g-tire",shop:"Big G Tire & Auto",day:"Day 1",address:"1110 Washington Pike, Bridgeville 15017",phone:"(412) 221-0705",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"152 CARFAX",notes:"Since 1970 · tire + full repair · 4.9 stars · next door to Hamlin's — pair them"},
+  {id:"opeka-mcmurray",shop:"Opeka Auto Repair — McMurray",day:"Day 1",address:"440 Valley Brook Rd, McMurray 15317",phone:"(724) 941-0610",tags:["MSO","BG"],stars:"4.8",reviewInfo:"19 Yelp",notes:"Since 1951 · 3rd-gen family · MSO + BG confirmed — also Upper St Clair location"},
+  {id:"harbison-auto",shop:"Harbison Auto Service",day:"Day 1",address:"3504 Washington Rd, McMurray 15317",phone:"(724) 941-9866",tags:[],stars:null,reviewInfo:null,notes:"Since 1962 · ASE Master Tech Wayne Thompson · PA inspection · same road as Opeka — pair them"},
+  {id:"walters-auto",shop:"Walter's Automotive",day:"Day 1",address:"5775 Baum Blvd, Pittsburgh 15206",phone:"(412) 363-1000",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:"204 Yelp",notes:"Tim Walter · East End anchor · high review count · do last if heading back through Pittsburgh"},
+  {id:"baum-blvd-auto",shop:"Baum Boulevard Automotive",day:"Day 1",address:"4536 Baum Blvd, Pittsburgh 15213",phone:"(412) 682-1866",tags:["BG"],stars:null,reviewInfo:null,notes:"30+ yrs · Charles Wichrowski owner · BG confirmed · Shadyside/Squirrel Hill/Edgewood · pair with Walter's"}
+]
+
+,"Hyannis / South Shore 3-Day": [
+
+  // ── Day 1 — Cape Cod: Falmouth → Mashpee → Hyannis → Barnstable → E Sandwich → Dennis → Brewster → Orleans → Eastham ──
+  {id:"mn-auto-falmouth",shop:"M & N Auto Repair",day:"Day 1",address:"20A Village Common Dr, East Falmouth MA 02536",phone:"(508) 540-3726",tags:["Mitchell","AutoTechIQ"],stars:"4.9",reviewInfo:"SureCritic active (10 reviews/mo) + AutoTechIQ Good Standing",notes:"Dual-platform signal — both SureCritic (Mitchell1 CRM) and AutoTechIQ confirmed · M–F 8–6 · highest-confidence target on the Cape"},
+  {id:"excel-auto-falmouth",shop:"Excel Auto Repair & Sales",day:"Day 1",address:"94 E Falmouth Hwy, East Falmouth MA 02536",phone:"(508) 444-2777",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing",notes:"4.9 stars · open 7 days · full-service including diesel · Falmouth corridor"},
+  {id:"falmouth-auto-center",shop:"Falmouth Auto Center",day:"Day 1",address:"614 E Falmouth Hwy, East Falmouth MA 02536",phone:"(508) 548-0136",tags:["Mitchell"],stars:"4.5",reviewInfo:"18 SureCritic · Mitchell1 CRM confirmed",notes:"Family-owned, ASE-certified · E Falmouth — same highway as M&N and Excel · easy cluster stop"},
+  {id:"cormiers-auto-mashpee",shop:"Cormier's Auto Service",day:"Day 1",address:"80 Algonquin Ave, Mashpee MA 02649",phone:"(508) 477-9755",tags:["AutoTechIQ"],stars:"4.7",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · M–F 7:30–5 · fills the Mashpee gap between Falmouth and Hyannis"},
+  {id:"quality-auto-hyannis",shop:"Quality Auto Center",day:"Day 1",address:"91 Barnstable Rd, Hyannis MA 02601",phone:"(508) 771-0033",tags:["AutoTechIQ"],stars:"4.7",reviewInfo:null,notes:"AutoTechIQ member — independent general repair on main Hyannis strip"},
+  {id:"hyannis-gas-repair",shop:"Hyannis Gas & Repair",day:"Day 1",address:"112 Barnstable Rd, Hyannis MA 02601",phone:"(774) 470-5126",tags:["AutoTechIQ"],stars:"4.6",reviewInfo:null,notes:"Under new management — AutoTechIQ member · M–F 8–5, Sat 8–3"},
+  {id:"world-tech-hyannis",shop:"World Tech Auto Center",day:"Day 1",address:"409 Iyannough Rd, Hyannis MA 02601",phone:"(508) 778-0377",tags:["AutoTechIQ"],stars:"4.6",reviewInfo:"38 Yelp",notes:"In business since 2007 · domestic, Asian & European · M–F 7:30–5"},
+  {id:"midcape-tire-hyannis",shop:"Mid Cape Tire — Hyannis",day:"Day 1",address:"426 Yarmouth Rd, Hyannis MA 02601",phone:"(508) 790-2400",tags:["Technet"],stars:null,reviewInfo:"TechNet member",notes:"TechNet-affiliated tire & auto · Yarmouth Rd Hyannis · cluster with Quality Auto and World Tech nearby"},
+  {id:"gtec-automarine-hyannis",shop:"Gtec Auto Marine & Repair",day:"Day 1",address:"73 Enterprise Rd, Hyannis MA 02601",phone:"(774) 503-2176",tags:["Technet"],stars:null,reviewInfo:"TechNet member",notes:"TechNet-affiliated · Hyannis industrial park · auto & marine repair · cluster with Quality Auto and Hyannis Gas stops"},
+  {id:"barretts-garage-barnstable",shop:"Barrett's Garage",day:"Day 1",address:"80 Kidds Hill Rd, Barnstable MA 02630",phone:"(508) 325-0045",tags:["Technet"],stars:null,reviewInfo:"TechNet member",notes:"TechNet-affiliated independent · Barnstable · fills gap between Hyannis and Brewster on Route 6A corridor"},
+  {id:"moore-automotive-marstons-mills",shop:"Moore Automotive Inc",day:"Day 1",address:"381 Old Falmouth Rd, Marstons Mills MA 02648",phone:"(508) 428-3828",tags:["Mitchell","Technet"],stars:"5.0",reviewInfo:"Active SureCritic (9 new reviews/month) · NAPA AutoCare",notes:"Family-owned since 1989 · NAPA AutoCare · serves Centerville, Osterville, Marstons Mills · natural add-on to Cormier's stop"},
+  {id:"cannings-service",shop:"Canning's Service Center",day:"Day 1",address:"491 Route 6A, E Sandwich MA 02537",phone:"(508) 888-1074",tags:["Mitchell","Marquee","BG"],stars:"4.9",reviewInfo:"3,328 SureCritic + Mitchell1 CRM confirmed",notes:"Active Mitchell1 user — huge review volume for a single indie shop · Sat 7–12 ★★ MARQUEE"},
+  {id:"dennis-car-care",shop:"Dennis Car Care",day:"Day 1",address:"895 Main St, West Dennis MA 02670",phone:"(508) 398-0900",tags:[],stars:"5.0",reviewInfo:"81 CARFAX reviews · no SureCritic/AutoTechIQ signal",notes:"Highly rated Rte 28 indie · W Dennis, near S Dennis stop · Mon–Fri 8–5, Sat 8–1 · cold prospect"},
+  {id:"route134-auto-dennis",shop:"Route 134 Auto Care",day:"Day 1",address:"8 Market Pl, South Dennis MA 02660",phone:"(508) 394-1844",tags:["Mitchell","Technet"],stars:"4.8",reviewInfo:"198 SureCritic + Mitchell1 CRM confirmed · NPS 84",notes:"AAA Approved · NAPA AutoCare · active review engagement · M–F 8–5, Sat 8–1 · fills the Dennis/mid-Cape gap"},
+  {id:"brewster-mobil",shop:"Brewster Mobil",day:"Day 1",address:"2160 Main St, Brewster MA 02631",phone:"(508) 896-6334",tags:["Mitchell"],stars:"4.9",reviewInfo:"870 SureCritic + Mitchell1 CRM confirmed",notes:"Rte 6A between Orleans and Dennis · solid Mitchell1 presence · sits between outer and mid-Cape stops"},
+  {id:"underpass-auto-brewster",shop:"Underpass Auto & Tire",day:"Day 1",address:"470 Underpass Rd, Brewster MA 02631",phone:"(508) 896-6400",tags:["Mitchell"],stars:"4.8",reviewInfo:"~10 SureCritic reviews · Mitchell1 CRM confirmed",notes:"Independent service center in Brewster · 4.8 avg across platforms · can pair with Cahoon Custom (same street)"},
+  {id:"lower-cape-auto-repair",shop:"Lower Cape Auto Repair (Frank's)",day:"Day 1",address:"103 Route 6A, Orleans MA 02653",phone:"(508) 255-0118",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"2,236 SureCritic + Mitchell1 CRM confirmed",notes:"NAPA AutoCare · 2,236 SureCritic reviews — among top review volumes on the Cape · MARQUEE target · outer Cape anchor ★★"},
+  {id:"harveys-auto-eastham",shop:"Harvey's Auto Service",day:"Day 1",address:"100 Holmes Rd, North Eastham MA 02642",phone:"(508) 255-5133",tags:["Technet"],stars:null,reviewInfo:"TechNet member",notes:"TechNet-affiliated · North Eastham outer Cape · pairs with Lower Cape Auto Repair (Frank's) in Orleans"},
+
+  // ── Day 2 — Canal (Sagamore) → Wareham → Kingston → Plymouth → Middleboro/Hanson ──
+  {id:"morrison-autoworks-sagamore",shop:"Morrison Autoworks Inc",day:"Day 2",address:"78 Cranberry Hwy, Sagamore MA 02561",phone:"(508) 771-0406",tags:["Mitchell"],stars:"4.9",reviewInfo:"246 SureCritic + Mitchell1 CRM confirmed · NPS 96",notes:"NPS 96 — exceptional customer loyalty · full-service including fleet/diesel up to 26K lbs · ASE/NAPA/AAA certified · at Cape Cod Canal — ideal first Day 2 stop"},
+  {id:"master-muffler-wareham",shop:"Master Muffler & Brake",day:"Day 2",address:"3125 Cranberry Hwy, East Wareham MA 02538",phone:"(508) 759-5416",tags:["AutoTechIQ","Technet"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · M–F 8–6, Sat 8–4 · Wareham on Cranberry Hwy corridor"},
+  {id:"sullivan-tire-kingston",shop:"Sullivan Tire & Auto Service — Kingston",day:"Day 2",address:"38 Main St, Kingston MA 02364",phone:"(781) 585-6600",tags:["AutoTechIQ","MSO","BG"],stars:"4.7",reviewInfo:"AutoTechIQ Good Standing",notes:"Regional chain (Sullivan Tire) — AutoTechIQ certified · M–F 7:30–6, Sat 7:30–5 · single stop for this MSO · Kingston corridor"},
+  {id:"plymouth-tire-pros",shop:"Plymouth Tire Pros",day:"Day 2",address:"130-7 Camelot Dr, Plymouth MA 02360",phone:"(508) 747-3322",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · M–F 8–5 · Camelot Dr near Rte 3 — different part of Plymouth from other stops"},
+  {id:"levis-sons-plymouth",shop:"Levis & Sons",day:"Day 2",address:"102 Court St, Plymouth MA 02360",phone:"(508) 746-8925",tags:["Technet"],stars:null,reviewInfo:"TechNet member",notes:"TechNet-affiliated · downtown Plymouth · cluster with Cape Auto Repair and Mayflower Service Center"},
+  {id:"cape-auto-repair",shop:"Cape Auto Repair",day:"Day 2",address:"53 Samoset St, Plymouth MA 02360",phone:"(508) 746-0330",tags:["Mitchell","Marquee"],stars:"5.0",reviewInfo:"5,765 SureCritic + Mitchell1 CRM confirmed",notes:"Largest SureCritic review volume in the corridor — very engaged Mitchell1 user ★★ MARQUEE"},
+  {id:"mayflower-service",shop:"Mayflower Service Center",day:"Day 2",address:"164 South St, Plymouth MA 02360",phone:"(508) 746-2009",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"3,824 SureCritic + Mitchell1 CRM confirmed",notes:"Active Mitchell1 user · M–F 8–5 · 26 new reviews in last 30 days ★★ MARQUEE"},
+  {id:"jims-auto-maintenance-plymouth",shop:"Jim's Automotive Maintenance",day:"Day 2",address:"11 Aldrin Rd Unit 2, Plymouth MA 02360",phone:"(508) 746-4200",tags:["Technet"],stars:null,reviewInfo:"TechNet member",notes:"TechNet-affiliated · Aldrin Rd Plymouth industrial park · same street as Lou's Custom Exhaust — double-stop opportunity"},
+  {id:"lous-custom-exhaust-plymouth",shop:"Lou's Custom Exhaust",day:"Day 2",address:"13 Aldrin Rd, Plymouth MA 02360",phone:"(508) 746-3500",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:"AutoTechIQ Good Standing",notes:"Full-service indie (does general repair beyond exhaust) · M–Sat 8:30–5:30 · AutoTechIQ certified"},
+  {id:"aa-automotive-middleboro",shop:"A & A Automotive",day:"Day 2",address:"381 W Grove St, Middleborough MA 02346",phone:"(508) 947-4472",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"2,491 SureCritic + Mitchell1 CRM confirmed",notes:"Est. 1986 · BFGoodrich dealer · serves Middleboro/Lakeville/Taunton · M–F 8–5 · ~12 miles from Plymouth on Rte 44 ★★ MARQUEE"},
+  {id:"juniors-auto-middleboro",shop:"Junior's Automotive Sales & Service",day:"Day 2",address:"359 W Grove St, Middleborough MA 02346",phone:"(508) 946-2227",tags:["Mitchell","AutoTechIQ"],stars:"4.7",reviewInfo:"174 Birdeye + AutoTechIQ Good Standing · AAA Approved",notes:"AAA Approved · AutoTechIQ certified · literally down the street from A&A — double-stop on W Grove St · M–F 7:30–5"},
+  {id:"daves-auto-hanson",shop:"Dave's Automotive",day:"Day 2",address:"875 Monponsett St, Hanson MA 02341",phone:"(781) 293-7000",tags:[],stars:"4.9",reviewInfo:"46 CARFAX reviews · no SureCritic/AutoTechIQ signal",notes:"Foreign & domestic · M–F 8–6, Sat 8–12 · Hanson on Rte 27 between Plymouth and South Shore Day 3 corridor · cold prospect"},
+
+  // ── Day 3 — South Shore north to NH: Duxbury → Marshfield → Norwell/Hanover → Holbrook → Weymouth → home NH by 3pm ──
+  {id:"duxbury-motorworks",shop:"Duxbury Motorworks",day:"Day 3",address:"1474 Tremont St, Duxbury MA 02332",phone:"(781) 452-7471",tags:["Mitchell","BG"],stars:"4.9",reviewInfo:"737 SureCritic",notes:"SureCritic-active shop in affluent Duxbury — Mitchell CRM signal"},
+  {id:"marshfield-tire",shop:"Marshfield Tire & Auto",day:"Day 3",address:"497 Plain St, Marshfield MA 02050",phone:"(781) 837-8742",tags:["Mitchell"],stars:"4.9",reviewInfo:"45 SureCritic + Mitchell1 CRM confirmed",notes:"Independent tire and auto in Marshfield · M–F standard hours · Marshfield is just east of Pembroke off Rte 139"},
+  {id:"top-auto-truck-marshfield",shop:"Top Auto & Truck Repair Inc",day:"Day 3",address:"2054 Ocean St, Marshfield MA 02050",phone:"",tags:["Mitchell"],stars:"4.5",reviewInfo:"37 Birdeye · SureCritic profile confirmed",notes:"Mitchell1 SureCritic presence · Marshfield Ocean St cluster with Marshfield Service Center · call ahead to confirm phone"},
+  {id:"driftway-auto-scituate",shop:"Driftway Auto Sales & Repair",day:"Day 3",address:"126 First Parish Rd, Scituate MA 02066",phone:"(781) 545-8600",tags:["Mitchell","Caveat"],stars:"5.0",reviewInfo:"SureCritic profile confirmed (light)",notes:"⚠️ TEMPORARILY CLOSED per Google Maps (Jun 2026) — no hours on file, last reviews 6-9 yrs ago · verify before routing ⚠️"},
+  {id:"kabilians-car-kare",shop:"Kabilian's Car Kare",day:"Day 3",address:"104 Mattakeesett St, Pembroke MA 02359",phone:"(781) 834-6558",tags:[],stars:"5.0",reviewInfo:"2,682 SureCritic",notes:"Huge SureCritic footprint for a single-location indie · 8 new reviews in last 30 days"},
+  {id:"almeidas-auto-norwell",shop:"Almeida's Auto Repair",day:"Day 3",address:"212 Washington St, Norwell MA 02061",phone:"(781) 826-0081",tags:[],stars:"4.9",reviewInfo:"610 SureCritic",notes:"Long-standing Norwell indie · SureCritic active · M–F 8–5"},
+  {id:"capeway-auto-hanover",shop:"Capeway Auto Service & Towing",day:"Day 3",address:"218 Columbia Rd, Hanover MA 02339",phone:"(781) 826-2051",tags:["Mitchell"],stars:"4.9",reviewInfo:"754 SureCritic · NPS 99",notes:"Est. 1951 · family-run · 754 SureCritic reviews = serious Mitchell1 engagement · NPS 99 · M–F 8–5 · Columbia Rd Hanover, right on Day 3 route"},
+  {id:"hanover-shell",shop:"Hanover Shell & Auto Repair",day:"Day 3",address:"1434 Washington St, Hanover MA 02339",phone:"(781) 826-3332",tags:[],stars:"5.0",reviewInfo:"324 SureCritic",notes:"18-year customer loyalty — SureCritic active · pair with Hanover Mobil (0.1 mi away)"},
+  {id:"hanover-mobil",shop:"Hanover Mobil",day:"Day 3",address:"1451 Washington St, Hanover MA 02339",phone:"(781) 826-2709",tags:[],stars:"5.0",reviewInfo:"19 SureCritic",notes:"Google Maps: listed as ‘Mobil’ gas station/convenience — primarily fuel, not dedicated auto repair · confirm shop capabilities before routing · pair with Hanover Shell same area"},
+  {id:"hingham-auto-repair",shop:"Hingham Auto Repair",day:"Day 3",address:"191 Beal St, Hingham MA 02043",phone:"(781) 749-4113",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:"~249 reviews · AutoTechIQ Good Standing",notes:"AutoTechIQ certified · full-service · Hingham directly between Cohasset/Norwell and Weymouth — ideal route position"},
+  {id:"atlantic-automotive-rockland",shop:"Atlantic Automotive",day:"Day 3",address:"50 John A Dunn Memorial Dr, Rockland MA 02370",phone:"(781) 982-8050",tags:["Mitchell"],stars:"4.9",reviewInfo:"~14 SureCritic + Mitchell1 CRM confirmed",notes:"Foreign & domestic · ASE-certified · M–F 7–6 · Rockland sits between Holbrook and Norwell"},
+  {id:"obrien-car-care",shop:"O'Brien Car Care",day:"Day 3",address:"472 S Franklin St, Holbrook MA 02343",phone:"(781) 767-5557",tags:["Mitchell","Marquee"],stars:"5.0",reviewInfo:"2,284 SureCritic + Mitchell1 CRM confirmed",notes:"Active Mitchell1 user · M–F 7:30–5:30, Sat 8–2 · 30 new reviews in last 30 days ★★ MARQUEE"},
+  {id:"preferred-auto-weymouth",shop:"Preferred Automotive, INC",day:"Day 3",address:"511 Main St, Weymouth MA 02190",phone:"(781) 331-8944",tags:["Mitchell","Technet"],stars:"4.9",reviewInfo:"933 SureCritic + Mitchell1 CRM confirmed",notes:"AAA Approved since 1991 · active Mitchell1 user · M–F 8–7, Sat 9–3"},
+  {id:"mass-tire-weymouth",shop:"Mass Tire & Auto Service",day:"Day 3",address:"76 Pond St, Weymouth MA 02190",phone:"(781) 340-7200",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing (DVI-active)",notes:"Deep AutoTechIQ integration (Digital Vehicle Inspections active) — strong platform engagement · M–F 7:30–5, Sat 7:30–4"},
+  {id:"ez-auto-weymouth",shop:"E Z Auto Service Center",day:"Day 3",address:"11 Main St, Weymouth MA 02188",phone:"(781) 331-0220",tags:["Technet"],stars:null,reviewInfo:"TechNet member",notes:"TechNet-affiliated · Weymouth Main St · cluster with Preferred Automotive and Mass Tire nearby"},
+  {id:"jb-auto-care-weymouth",shop:"JB Auto Care",day:"Day 3",address:"291 Bridge St, North Weymouth MA 02191",phone:"(781) 331-6068",tags:["Technet","BG"],stars:null,reviewInfo:"TechNet member · BG affiliate",notes:"TechNet + BG affiliated · North Weymouth Bridge St · fills coverage between Hingham and Weymouth corridor"}
+
+
+
+]
+
+,"Portsmouth NH / Southern Maine 4-Day": [
+
+  // ── Day 1 — Seacoast NH (Salisbury MA → Hampton → Hampton Falls → Exeter → Brentwood → Newmarket → Dover → Portsmouth) ──
+  {id:"daaboul-and-sons",shop:"Daaboul And Sons Auto Repair",day:"Day 1",address:"76 Elm St, Salisbury MA 01952",phone:"(978) 465-0500",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"1,018 SureCritic + Mitchell1 CRM confirmed",notes:"8 new reviews/month — extremely active · M–F 8–6, Sat 8–3 · right on NH/MA border ★★ MARQUEE · first stop heading north"},
+  {id:"pit-stop-hampton",shop:"Pit Stop Auto & Truck",day:"Day 1",address:"2 Scott Rd Unit 4, Hampton NH 03842",phone:"(603) 929-1111",tags:["Mitchell"],stars:"4.6",reviewInfo:"49 SureCritic + Mitchell1 CRM confirmed",notes:"SureCritic-active Mitchell1 CRM user · right off Rte 1 seacoast corridor · state inspections, Volvo specialty"},
+  {id:"intune-auto-hamptonfalls",shop:"In Tune Automotive",day:"Day 1",address:"4 Lafayette Rd, Hampton Falls NH 03844",phone:"(603) 926-6910",tags:["Technet","BG"],stars:"4.6",reviewInfo:"93 Google reviews",notes:"Full-service independent since 2001 · M–F 8–5 · Hampton Falls between Hampton and Stratham"},
+  {id:"graham-tire-exeter",shop:"Graham Tire & Auto",day:"Day 1",address:"1 Alumni Dr, Exeter NH 03833",phone:"(603) 772-1817",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"1,360 SureCritic + Mitchell1 CRM confirmed",notes:"Huge review volume for NH — very active Mitchell1 user · M–F 7:30–5, Sat 8–2 ★★ MARQUEE"},
+  {id:"eastern-states-brentwood",shop:"Eastern States Auto Repair",day:"Day 1",address:"67 Route 27, Brentwood NH 03833",phone:"(603) 778-9200",tags:["Mitchell"],stars:"4.9",reviewInfo:"471 SureCritic + Mitchell1 CRM confirmed",notes:"Active Mitchell1 user · M–F 8–5 · Exeter/Brentwood area"},
+  {id:"kruczeks-garage",shop:"Kruczek's Garage & Towing",day:"Day 1",address:"24 N Main St, Newmarket NH 03857",phone:"(603) 659-6371",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"452 Google reviews",notes:"AutoTechIQ certified · M–F 8–5 · Newmarket NH"},
+  {id:"garrison-city-dover",shop:"Garrison City Automotive",day:"Day 1",address:"102 Central Ave, Dover NH 03820",phone:"(603) 617-6755",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:"145 Birdeye + AutoTechIQ Good Standing",notes:"ASE certified · self-described 'digital shop' · M–Th 8–5, Fri 8–4:30 · Dover bridges the Seacoast loop back to Portsmouth"},
+  {id:"portsmouth-car-clinic",shop:"Portsmouth Car Clinic",day:"Day 1",address:"20 Mirona Road Ext., Portsmouth NH 03801",phone:"(603) 431-0555",tags:["Mitchell","Caveat"],stars:"4.9",reviewInfo:"470 SureCritic — INACTIVE flag",notes:"Mitchell1 CRM user — SureCritic shows Inactive Business · confirm open before visiting ⚠"},
+  {id:"gormans-garage-exeter",shop:"Gorman's Garage",day:"Day 1",address:"133 Epping Rd, Exeter NH 03833",phone:"(603) 772-3711",tags:["Mitchell"],stars:"4.5",reviewInfo:"51 Google + SureCritic profile active",notes:"Family-run · honest pricing reputation · Epping Rd (Rte 27) between Exeter and Epping — fits after Graham Tire heading west"},
+  {id:"brians-automotive-epping",shop:"Brian's Automotive",day:"Day 1",address:"38 Moore St, Epping NH 03042",phone:"(603) 734-5312",tags:["Mitchell"],stars:"5.0",reviewInfo:"84 CARFAX · SureCritic active",notes:"5.0 stars · M–F 8–5 · Epping on Rte 101 corridor west of Exeter · SureCritic presence = Mitchell1 signal"},
+  {id:"baldassarre-automotive",shop:"Baldassarre Automotive",day:"Day 1",address:"60 Lafayette Rd, North Hampton NH 03862",phone:"(603) 964-0178",tags:[],stars:"5.0",reviewInfo:"46 Google reviews",notes:"Founded 2019 · ASE-certified · luxury/hybrid/EV specialist · 5.0 Google · N Hampton between Hampton and Portsmouth · new shop = strong Mitchell opportunity"},
+  {id:"route33-auto-greenland",shop:"Route 33 Auto Repair",day:"Day 1",address:"29 Autumn Pond Park, Greenland NH 03840",phone:"(603) 988-6501",tags:[],stars:"5.0",reviewInfo:"87 reviews (Birdeye/Google)",notes:"ASE-certified · foreign & domestic · Greenland on Rte 33 between Stratham and Portsmouth · no CRM signal detected — cold prospect"},
+  {id:"dougs-towing-rochester",shop:"Doug's Towing & Automotive Repair",day:"Day 1",address:"304 Walnut St, Rochester NH 03867",phone:"(603) 332-7195",tags:["Mitchell","AutoTechIQ"],stars:"4.9",reviewInfo:"307 SureCritic + AutoTechIQ · NAPA AutoCare",notes:"Family-owned since 1991 · 307 SureCritic reviews = deep Mitchell1 engagement · AutoTechIQ certified · NAPA · M–F 8–5 · Rochester (~25 min inland from Dover) ★★"},
+  {id:"healey-auto-rochester",shop:"Healey Auto Repair",day:"Day 1",address:"31 Milton Rd, Rochester NH 03868",phone:"(603) 332-2287",tags:["Mitchell"],stars:"4.7",reviewInfo:"170 SureCritic + AAA Approved",notes:"A+ BBB · 170 SureCritic reviews = active Mitchell1 user · M–F 8–5/6, Sat 9–4 · Rochester — pair with Doug's same area"},
+  {id:"integrity-automotive-rochester",shop:"Integrity Automotive",day:"Day 1",address:"415 N Main St, Rochester NH 03867",phone:"(603) 335-1117",tags:["Mitchell"],stars:"4.6",reviewInfo:"43 SureCritic + Mitchell1 CRM confirmed",notes:"Founded 2010 · 43 SureCritic reviews = Mitchell1 user · M–F 8–5 · Rochester cluster (Doug's + Healey + Integrity = 3 in one zone)"},
+  {id:"central-park-garage-somersworth",shop:"Central Park Garage",day:"Day 1",address:"470 High St, Somersworth NH 03878",phone:"(603) 953-0047",tags:[],stars:"4.7",reviewInfo:"531 Birdeye reviews · no SureCritic/AutoTechIQ signal",notes:"Family-owned since 2003 · ASE-certified · NAPA · 531 Birdeye reviews = enormous car count · no CRM detected = top cold prospect · M–F 7:30–5:30 · Somersworth adjacent to Dover"},
+  {id:"davies-tire-portsmouth",shop:"Davies Tire Co Inc",day:"Day 1",address:"Portsmouth NH 03801",phone:null,tags:["Assoc"],stars:null,reviewInfo:"NETSA member",notes:"NETSA member tire dealer · Portsmouth NH · confirm address + phone via Google Maps before routing"},
+  {id:"seabrook-tire-auto-nh",shop:"Seabrook Tire & Auto",day:"Day 1",address:"Seabrook NH 03874",phone:null,tags:["Assoc"],stars:null,reviewInfo:"NETSA member",notes:"NETSA member · Seabrook NH (near Hampton / MA border) · confirm address + phone via Google Maps before routing"},
+
+  // ── Day 2 — South Berwick ME → Wells → Kennebunk → Arundel → Sanford → Biddeford × 2 → Saco (MSO hub) ──
+  {id:"portland-st-service-sberwick",shop:"Portland Street Service Center",day:"Day 2",address:"24 Portland St, South Berwick ME 03908",phone:"",tags:["Mitchell","AutoTechIQ"],stars:null,reviewInfo:"Mitchell1 CRM + AutoTechIQ confirmed (dual signal)",notes:"Dual-platform signal (SureCritic + AutoTechIQ) · first stop crossing into Maine on US-236 · call ahead to confirm phone ⚠"},
+  {id:"pine-state-garage",shop:"Pine State Garage",day:"Day 2",address:"18 Mile Rd, Wells ME 04090",phone:"(207) 646-5435",tags:["AutoTechIQ"],stars:"5.0",reviewInfo:"AutoTechIQ Good Standing",notes:"Perfect 5.0 stars · M–F 8–5 · Wells on US-1 corridor"},
+  {id:"kennebunk-auto-center",shop:"Kennebunk Auto Center",day:"Day 2",address:"90 York St, Kennebunk ME 04043",phone:"",tags:["Caveat"],stars:null,reviewInfo:null,notes:"NAPA AutoCare Center · appears in CARFAX top-rated list · no confirmed SureCritic/AutoTechIQ signal — verify CRM before visit ⚠ · call ahead to confirm phone"},
+  {id:"bruces-auto-arundel",shop:"Bruce's Auto Service",day:"Day 2",address:"19 Enterprise Dr, Arundel ME 04046",phone:"(207) 985-9914",tags:["Mitchell","BG"],stars:"5.0",reviewInfo:"539 SureCritic + Mitchell1 CRM confirmed",notes:"BG affiliate confirmed · 2nd-generation family shop since 1990 · Tu–F 6:30–5 · foreign/import specialist · website confirmed Mitchell1 SocialCRM"},
+  {id:"chandlers-auto-sanford",shop:"Chandler's Automotive and Towing",day:"Day 2",address:"328 Jagger Mill Rd, Sanford ME 04073",phone:"(207) 850-1080",tags:["Mitchell","AutoTechIQ"],stars:"4.8",reviewInfo:"Mitchell1 CRM + AutoTechIQ confirmed (dual signal) · AAA Approved · NAPA AutoCare",notes:"Dual-platform signal — AutoTechIQ certified + active SureCritic · AAA Approved · M–F 8–5 · inland swing from Arundel/Kennebunk"},
+  {id:"byrons-auto-biddeford",shop:"Byron's Auto Repair",day:"Day 2",address:"610 Elm St, Biddeford ME 04005",phone:"(207) 423-2250",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · M–F 8–5 · Biddeford"},
+  {id:"neils-motors-biddeford",shop:"Neil's Motors Inc",day:"Day 2",address:"602 Alfred St, Biddeford ME 04005",phone:"(207) 282-3156",tags:["AutoTechIQ"],stars:"4.7",reviewInfo:"266 Birdeye + AutoTechIQ Good Standing",notes:"Self-described 'The Digital Shop' — progressive, tech-forward indie · in business since 1970 · M–F 8–5 · Biddeford"},
+  {id:"paulins-saco",shop:"Paulin's Tire & Auto — Saco (HUB)",day:"Day 2",address:"73 Elm St, Saco ME 04072",phone:"(207) 284-5960",tags:["Mitchell","MSO"],stars:"4.9",reviewInfo:"1,397 SureCritic + Mitchell1 CRM confirmed",notes:"Flagship hub — highest review count in the 6-location MSO chain · single stop for entire Paulins chain · identify decision maker · M–F 7–5, Sat 8–4"},
+  {id:"autoworks-diagnostics-kittery",shop:"Autoworks Diagnostics & Repair",day:"Day 2",address:"107 Government St, Kittery ME 03904",phone:"(207) 439-4500",tags:["AutoTechIQ"],stars:"4.7",reviewInfo:"AutoTechIQ Good Standing · AAA Premier Award",notes:"Long-established · AAA premier satisfaction award winner · foreign/domestic/European/hybrid · loaner cars · M–F 7:30–5 · Kittery first stop if route extends south"},
+  {id:"puffers-automotive-kittery",shop:"Puffer's Automotive",day:"Day 2",address:"421 US Route 1, Kittery ME 03904",phone:"(207) 252-4369",tags:[],stars:"4.8",reviewInfo:"95 Google reviews",notes:"Preventive maintenance focus · strong community following · 4.8/95 reviews · M–F 8–5 · Kittery US-1 · pairs with Autoworks as a Kittery cluster stop"},
+  {id:"wiggin-auto-york",shop:"Wiggin Auto Repair",day:"Day 2",address:"1120 US Route 1, York ME 03909",phone:"(207) 358-9299",tags:[],stars:"4.8",reviewInfo:"42 Birdeye reviews",notes:"All makes and models · M–F 9–5 · York ME on US-1 north of Kittery · no CRM signal — cold prospect with good reputation"},
+  {id:"lous-service-saco",shop:"Lou's Service Center",day:"Day 2",address:"33 Ocean Park Rd, Saco ME 04072",phone:"(207) 283-0119",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"206 Google reviews · AutoTechIQ Good Standing",notes:"206 Google reviews at 4.9 stars = exceptional car count · AutoTechIQ certified = tech-forward · computer diagnostics, brakes, tires · M–F 8–5 · pairs naturally with Paulin's Saco stop"},
+
+  // ── Day 3 — Portland metro (Scarborough → Cape Elizabeth → South Portland × 2 → Portland × 4) ──
+  {id:"village-center-scarborough",shop:"Village Center Auto Care",day:"Day 3",address:"239 US-1, Scarborough ME 04074",phone:"(207) 883-2557",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · M–F 7am–7pm, Sat 8–5 · US-1 Scarborough — first Day 3 stop closest to hotel"},
+  {id:"cape-elizabeth-service",shop:"Cape Elizabeth Service Center",day:"Day 3",address:"560 Shore Rd, Cape Elizabeth ME 04107",phone:"(207) 767-7302",tags:["Mitchell"],stars:"4.9",reviewInfo:"291 SureCritic + Mitchell1 CRM confirmed",notes:"Family-run since 1940s · 93% five-star reviews · M–F 8–5 · easy swing off South Portland route"},
+  {id:"ocean-street-auto-sp",shop:"Ocean Street Auto Repair",day:"Day 3",address:"310 Main St, South Portland ME 04106",phone:"(207) 767-7073",tags:["Mitchell"],stars:"4.3",reviewInfo:"96 SureCritic + Mitchell1 CRM confirmed",notes:"In business since 1976 · ASE certified · owner Ted Abbott · M–F 8–6 · South Portland"},
+  {id:"duvals-service-sp",shop:"Duval's Service Center",day:"Day 3",address:"20 Park Ave, South Portland ME 04106",phone:"(207) 799-7314",tags:["Mitchell"],stars:"4.8",reviewInfo:"34 SureCritic (14 new/month) + Mitchell1 CRM confirmed",notes:"'Most Honest Garage 8 Years in a Row' · high review velocity (14 new SureCritic/mo) · in business since 1985 · M–F 8–5"},
+  {id:"portland-auto-repair",shop:"Portland Auto Repair",day:"Day 3",address:"1129 Forest Ave, Portland ME 04103",phone:"(207) 797-3606",tags:["Mitchell"],stars:"4.8",reviewInfo:"37 SureCritic + Mitchell1 CRM confirmed",notes:"Active SureCritic presence · M–F 8–5 · Forest Ave Portland"},
+  {id:"portland-service-chips",shop:"Portland Service Center",day:"Day 3",address:"518 Washington Ave, Portland ME 04103",phone:"(207) 775-2020",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"1,332 SureCritic + Mitchell1 CRM confirmed",notes:"Family-owned by Jason & Becki Webster since 2013 · 1,332 SureCritic reviews — one of the deepest Mitchell1 users in Maine · Subaru focus, all makes · M–F 7:30–4:30 ★★ MARQUEE"},
+  {id:"parry-motors-portland",shop:"Parry Motors",day:"Day 3",address:"202 Warren Ave Suite 600, Portland ME 04103",phone:"",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · M–F 8–5 · call ahead to confirm phone ⚠"},
+  {id:"cumberland-ave-garage",shop:"Cumberland Ave Garage",day:"Day 3",address:"122 Cumberland Ave, Portland ME 04101",phone:"(207) 775-0493",tags:["Caveat"],stars:"4.7",reviewInfo:"111 Google reviews",notes:"Well-regarded Portland indie · NAPA Auto Center · no confirmed SureCritic/AutoTechIQ — verify before visiting ⚠ · M–Th 7:30–5, Fri 7:30–12"},
+  {id:"auto-care-plus-southportland",shop:"Auto Care Plus",day:"Day 3",address:"509 Westbrook St, South Portland ME 04106",phone:"(207) 417-4913",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"386 Birdeye · AutoTechIQ Good Standing",notes:"AAA Approved · ASE Master Techs · 5-year/50K warranty · AutoTechIQ certified = strong platform engagement · M–F 7:30–5:30 · South Portland anchor stop"},
+  {id:"cottage-road-service-sp",shop:"Cottage Road Service Center",day:"Day 3",address:"5 Broadway, South Portland ME 04106",phone:"(207) 767-9090",tags:[],stars:"4.5",reviewInfo:"19 Nextdoor reviews · NAPA AutoCare",notes:"Specializes in Asian and domestic · M–Sat 9–4 · NAPA affiliate · highly praised for honesty · small loyal shop · S Portland"},
+  {id:"vp-automotive-portland",shop:"VP Automotive",day:"Day 3",address:"30 Manuel Dr, Portland ME 04103",phone:"(207) 805-1940",tags:[],stars:"4.8",reviewInfo:"NAPA AutoCare",notes:"Est. 2022 · foreign/import specialist · family-owned · NAPA affiliate · relatively new = open to software adoption · Portland"},
+  {id:"hewitt-auto-yarmouth",shop:"Hewitt's Auto Service & Sales",day:"Day 3",address:"340 Granite St, Yarmouth ME 04096",phone:"(207) 846-4366",tags:[],stars:"4.7",reviewInfo:"NAPA AutoCare",notes:"Est. 1998 · ASE Master Tech · European vehicle specialist · NAPA · Yarmouth ME on US-1 between Portland and Freeport — good Day 3 northern cap"},
+
+  // ── Day 4 — Westbrook → Gorham → Windham → Gray → Freeport → Brunswick → West Bath → Auburn ──
+  {id:"northeast-autoworks-westbrook",shop:"Northeast AutoWorks",day:"Day 4",address:"650 Bridgton Rd, Westbrook ME 04092",phone:"(207) 899-1355",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · M–F 8–5 · Westbrook — first stop heading inland from hotel"},
+  {id:"motors207-gorham",shop:"207 Motors",day:"Day 4",address:"397 Ossipee Trl E, Gorham ME 04038",phone:"(207) 400-4473",tags:["AutoTechIQ"],stars:"4.5",reviewInfo:"AutoTechIQ Good Standing",notes:"AutoTechIQ certified · Tu–Sa 7–3:30 · Gorham/Ossipee Trail"},
+  {id:"maines-auto-connection",shop:"Maine's Auto Connection",day:"Day 4",address:"653 Roosevelt Trail, Windham ME 04062",phone:"(207) 329-8064",tags:["Mitchell"],stars:"4.9",reviewInfo:"21 SureCritic + Mitchell1 CRM confirmed",notes:"Active Mitchell1 user · M–Sa 9–5 · Windham on Roosevelt Trail"},
+  {id:"lifetime-service-gray",shop:"Lifetime Service Center",day:"Day 4",address:"35 Lewiston Rd, Gray ME 04039",phone:"(207) 657-5000",tags:["Mitchell"],stars:"4.8",reviewInfo:"172 SureCritic + Mitchell1 CRM confirmed",notes:"NAPA AutoCare · 210 Google reviews · M–Th 8–4:30, Fri 8–4 · Gray on Rte 26 heading toward Freeport/Auburn"},
+  {id:"autowerkes-maine",shop:"Autowerkes Maine",day:"Day 4",address:"398 US-1, Freeport ME 04032",phone:"(207) 865-6600",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing",notes:"European/import specialist · M–F 7:30–5:30 · Freeport on US-1"},
+  {id:"don-foshays-brunswick",shop:"Don Foshay's — Brunswick (HUB)",day:"Day 4",address:"123 Bath Rd, Brunswick ME 04011",phone:"(207) 721-0009",tags:["AutoTechIQ","MSO"],stars:"4.9",reviewInfo:"AutoTechIQ Good Standing",notes:"6-location Maine chain — single stop (hub) · identify decision maker · M–F 7:30–5:30, Sat 8–2"},
+  {id:"dr-coffins-west-bath",shop:"D.R. Coffin's Garage",day:"Day 4",address:"150 State Rd, West Bath ME 04530",phone:"(207) 443-6411",tags:["Caveat"],stars:"4.5",reviewInfo:"118 Birdeye",notes:"NAPA AutoCare · AAA Approved · no confirmed SureCritic/AutoTechIQ signal — verify before visiting ⚠ · West Bath/Bath corridor north of Brunswick"},
+  {id:"berubes-auto-lewiston",shop:"Berube's Complete Auto Care",day:"Day 4",address:"147 East Ave, Lewiston ME 04240",phone:"(207) 782-1125",tags:["Mitchell","Marquee"],stars:"4.8",reviewInfo:"595 SureCritic + Mitchell1 CRM confirmed · NAPA AutoCare · AAA Approved",notes:"50+ years family-owned · 595 SureCritic reviews = Marquee-level Mitchell1 engagement · serves Lewiston/Lisbon/Sabattus/Auburn corridor · M–F 8–5 ★★ MARQUEE"},
+  {id:"triple-c-auto-lewiston",shop:"Triple C Auto Repair",day:"Day 4",address:"25D Landry Rd, Lewiston ME 04240",phone:"(207) 333-5030",tags:["Mitchell"],stars:"4.9",reviewInfo:"299 SureCritic + Mitchell1 CRM confirmed",notes:"Founded 2013 · ASE certified · 299 SureCritic reviews = active Mitchell1 user · M–F 8–5 · Lewiston — pair with Berube's same city"},
+  {id:"quality-care-auto-lisbon",shop:"Quality Care Auto",day:"Day 4",address:"183 Lisbon St, Lisbon ME 04250",phone:"(207) 353-9862",tags:[],stars:"4.9",reviewInfo:"65 Birdeye · NAPA AutoCare · AAA Approved",notes:"Est. 1988 · ASE certified · 12-month/12K warranty · M–F 8–4:30 · Rte 196 between Lewiston and Topsham — fits naturally after Lewiston stops"},
+  {id:"dons-auto-lisbon-falls",shop:"Don's Automotive",day:"Day 4",address:"6 Capital Ave, Lisbon Falls ME 04252",phone:"(207) 353-6001",tags:[],stars:"4.5",reviewInfo:"NAPA AutoCare",notes:"Family-owned since 1975 · ASE certified · Peace of Mind warranty · M–F 7:30–4:30 · Lisbon Falls just east of Lisbon on corridor to Topsham"}
+
+]
+
+,"New Jersey — Parsippany 10-Day": [
+
+  // ── Day 1 — Parsippany / Denville / Whippany / Boonton / Morris Plains ──
+  {id:"morris-plains-automotive",shop:"Morris Plains Automotive",day:"Day 1",address:"1799 Route 10 E, Morris Plains NJ 07950",phone:"(973) 539-1833",tags:["Mitchell","Marquee","Technet"],stars:"5.0",reviewInfo:"1,128 SureCritic · Mitchell1 CRM confirmed",notes:"Family-owned since 1963 · woman-owned (Ceglia family) · M–F 8–5 · same-day service · NextDoor Neighborhood Favorite · Daily Record Best of Best ★★ MARQUEE"},
+  {id:"denville-automotive",shop:"Denville Automotive",day:"Day 1",address:"107 Route 46 E, Denville NJ 07834",phone:"(973) 784-4535",tags:["AutoTechIQ","Technet"],stars:"4.8",reviewInfo:"AutoTechIQ listed (ID 143762) · 34 Facebook 100% recommend",notes:"Owner Hank · honest no-upsell reputation · M–F 7:30–6:30 · Route 46 corridor near Mountain Lakes"},
+  {id:"parsippany-automotive",shop:"Parsippany Automotive",day:"Day 1",address:"141 N Beverwyck Rd, Lake Hiawatha NJ 07034",phone:"(973) 263-1111",tags:["Technet"],stars:"4.9",reviewInfo:"110 SureCritic · import repair specialty",notes:"Family-owned 50+ years · import specialty · M–F 7–5, Sat 8–2"},
+  {id:"peace-of-mind-automotive",shop:"Peace of Mind Automotive",day:"Day 1",address:"709 Lake Shore Dr, Parsippany NJ 07054",phone:"(973) 587-2417",tags:[],stars:"4.9",reviewInfo:"133 CARFAX · 386 CARFAX favorited",notes:"Owner Jim Roche · across from Lake Parsippany · pick-up/drop-off service · full-service all makes & models"},
+  {id:"steves-auto-repair-parsippany",shop:"Steve's Auto Repair",day:"Day 1",address:"204 Parsippany Rd, Parsippany NJ 07054",phone:"(973) 887-8850",tags:[],stars:"4.9",reviewInfo:"71 Birdeye · import specialist (Subaru, BMW, Lexus, Honda)",notes:"Est. 1999 · import specialist · M–F 8–5 · stevesautorepair.net"},
+  {id:"ads-automotive-whippany",shop:"ADS Automotive",day:"Day 1",address:"261 Parsippany Rd, Whippany NJ 07981",phone:"(973) 887-0679",tags:[],stars:"4.5",reviewInfo:"88 Birdeye · ASE-certified",notes:"ASE-certified · domestic, Asian & European · M–F 7–5:30"},
+  {id:"west-main-automotive-boonton",shop:"West Main Automotive",day:"Day 1",address:"125 West Main St, Boonton NJ 07005",phone:"(973) 299-0606",tags:[],stars:"4.8",reviewInfo:"67 Birdeye · NAPA AutoCare Center",notes:"NAPA AutoCare · owner Christopher Piccioni · M–F 8–5, Sat 8–12 · Rte 202 corridor through Boonton"},
+  {id:"powder-mill-auto-parsippany",shop:"Powder Mill Towing and Auto Repair",day:"Day 1",address:"299 Littleton Rd, Parsippany NJ 07054",phone:"(973) 285-9282",tags:[],stars:"4.4",reviewInfo:"69 Yelp · AAA Approved Auto Repair",notes:"AAA Approved · 24/7 towing + M–Sat repair · adjacent to TopGolf on Littleton Rd"},
+  {id:"total-performance-center-parsippany",shop:"Total Performance Center",day:"Day 1",address:"740 Route 46, Parsippany NJ 07054",phone:"(908) 731-7505",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ listed (ID 250778) · 176 verified reviews",notes:"Porsche specialist + all factory maintenance · M–F 8–6 · performance/daily driver"},
+
+  // ── Day 2 — Morristown / Madison / Chatham / Florham Park / Randolph ──
+  {id:"shade-tree-garage-morristown",shop:"Shade Tree Garage",day:"Day 2",address:"171 Washington St, Morristown NJ 07960",phone:"(973) 540-9880",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"293 CARFAX · AutoTechIQ listed (ID 143108) · AAA Approved",notes:"Est. Dec 1975 · AAA Approved · Bosch-trained · GM Master Tech Shop · NJ licensed emissions · 30-mo/30k warranty · M–F 8–5 · loaner vehicles"},
+  {id:"milellis-auto-morristown",shop:"Milelli's Auto Repair & Towing",day:"Day 2",address:"39 John St, Morristown NJ 07960",phone:"(973) 538-0734",tags:[],stars:"5.0",reviewInfo:"198 CARFAX",notes:"Family-owned since 1994 · owner Steve Milelli · ASE-certified · M–F 8–6:30 · pick-up/drop-off · near Rte 287"},
+  {id:"bauer-automotive-chatham",shop:"Bauer Automotive Service",day:"Day 2",address:"7 Commerce St, Chatham NJ 07928",phone:"(973) 635-4800",tags:[],stars:"4.8",reviewInfo:"Family-owned 50+ years",notes:"Family-owned 50+ years · truck annex at 27 Watchung Ave (973) 635-8411 · M–F 8–5"},
+  {id:"jg-motor-club-chatham",shop:"J & G Motor Club",day:"Day 2",address:"360 Main St, Chatham NJ 07928",phone:"(201) 989-6811",tags:[],stars:"5.0",reviewInfo:"58 CARFAX · 1,021 CARFAX favorited",notes:"Sister shop: J&S Motor Club, 31 S Passaic Ave Chatham · jgmotorclub.com · highly favorited"},
+  {id:"js-motor-club-chatham",shop:"J & S Motor Club",day:"Day 2",address:"31 S Passaic Ave, Chatham NJ 07928",phone:"(201) 292-0175",tags:[],stars:"5.0",reviewInfo:"23 CARFAX · sister location to J & G Motor Club",notes:"Pair with J&G same day · Chatham south side"},
+  {id:"marvins-auto-care-chatham",shop:"Marvin's Auto Care",day:"Day 2",address:"18 Commerce St, Chatham NJ 07928",phone:"(973) 526-0490",tags:[],stars:"5.0",reviewInfo:"101 CARFAX",notes:"Full-service all makes/models · M–F open to 5 · Chatham center"},
+  {id:"franks-getty-florham-park",shop:"Frank's Getty",day:"Day 2",address:"314 Greenwood Ave, Florham Park NJ 07932",phone:"(973) 377-6111",tags:[],stars:"5.0",reviewInfo:"NAPA AutoCare Mechanical Center",notes:"NAPA AutoCare · owner Frank · M–F 7am–7pm · honest no-upsell reputation"},
+  {id:"arst-automotive-randolph",shop:"ARST Automotive",day:"Day 2",address:"738 Route 10 W, Randolph NJ 07869",phone:"(973) 590-2382",tags:[],stars:"4.9",reviewInfo:"39 CARFAX · full-service brakes/diagnostics/maint",notes:"M–F open to 6pm · Route 10 W corridor"},
+  {id:"woodys-automotive-randolph",shop:"Woody's Automotive",day:"Day 2",address:"1248 Sussex Tpke #B6, Randolph NJ 07869",phone:"(973) 252-1144",tags:[],stars:"5.0",reviewInfo:"72 CARFAX · NAPA AutoCare · 24-mo/24k warranty",notes:"NAPA AutoCare · ASE-certified · M–F 8–5, Sat 8–4 · Randolph/Mount Freedom"},
+
+  // ── Day 3 — Dover / Rockaway / Mine Hill / Wharton / Roxbury / Ledgewood / Kenvil ──
+  {id:"jd-automotive-dover",shop:"J.D. Automotive & Truck",day:"Day 3",address:"331 Richards Ave, Dover NJ 07801",phone:"(973) 366-0799",tags:["Mitchell","Marquee"],stars:"5.0",reviewInfo:"1,246 SureCritic · Mitchell1 CRM confirmed",notes:"Est. 1974 · full-service general + heavy truck · M–F 7–6, Sat 7–12 ★★ MARQUEE"},
+  {id:"lsk-automotive-kenvil",shop:"LSK Automotive",day:"Day 3",address:"571 Route 46, Kenvil NJ 07847",phone:"(973) 584-5114",tags:["Mitchell","Marquee"],stars:"5.0",reviewInfo:"1,141 SureCritic · Mitchell1 CRM confirmed",notes:"Full-service cars & trucks · diagnostics-first approach · M–F 8–5 ★★ MARQUEE"},
+  {id:"knights-automotive-ledgewood",shop:"Knight's Automotive",day:"Day 3",address:"171 E Main St, Ledgewood NJ 07852",phone:"(973) 927-0114",tags:["AutoTechIQ","Technet"],stars:"4.9",reviewInfo:"314 SureCritic · AAA Approved · AutoTechIQ listed",notes:"Est. 1984 · family-owned · AAA · ASE · M–F 8–6"},
+  {id:"automotive-magic-kenvil",shop:"Automotive Magic",day:"Day 3",address:"34 Berkshire Valley Rd, Kenvil NJ 07847",phone:"(973) 366-3777",tags:["AutoTechIQ","BG"],stars:"4.9",reviewInfo:"230 CARFAX · 1,585 CARFAX favorited · AutoTechIQ listed (ID 57294) · AAA Approved · 3-yr/36k warranty",notes:"Est. 2003 · AAA Approved · 3-yr/36k warranty · M–F 8–5 · high CARFAX favorite count"},
+  {id:"qtr-inc-rockaway",shop:"QTR Inc. Auto Repair",day:"Day 3",address:"786 Green Pond Rd, Rockaway NJ 07866",phone:"(973) 983-9211",tags:[],stars:"",reviewInfo:"NAPA AutoCare member",notes:"NAPA AutoCare · general repair"},
+  {id:"precision-auto-center-rockaway",shop:"Precision Auto Center",day:"Day 3",address:"115 US Highway 46, Rockaway NJ 07866",phone:"(973) 625-7600",tags:["Technet"],stars:"",reviewInfo:"Family-owned since 2006",notes:"Family-owned · M–F 8–7"},
+  {id:"amazing-automotive-rockaway",shop:"Amazing Automotive Service & Repair",day:"Day 3",address:"30 E Main St, Rockaway NJ 07866",phone:"(973) 586-2060",tags:[],stars:"",reviewInfo:"Owner-operated · European + general repair",notes:"Owner Giovanni personally diagnoses every vehicle · European specialist + general"},
+  {id:"rockaway-service",shop:"Rockaway Service",day:"Day 3",address:"111 W Main St, Rockaway NJ 07866",phone:"(973) 625-3070",tags:[],stars:"4.5",reviewInfo:"State-certified · family-owned since 1994",notes:"Est. 1994 · NJ state inspection · general repair"},
+  {id:"leons-auto-werks-rockaway",shop:"Leon's Auto Werks",day:"Day 3",address:"2 Rockaway Valley Rd, Rockaway NJ 07866",phone:"(973) 586-5900",tags:[],stars:"",reviewInfo:"Independent full-service",notes:"Brakes · transmissions · preventive maintenance · owner-operated"},
+  {id:"jd-auto-mine-hill",shop:"J&D Automotive",day:"Day 3",address:"84 Route 46, Mine Hill NJ 07803",phone:"(973) 252-1200",tags:[],stars:"",reviewInfo:"Independent general repair · Mine Hill/Wharton corridor",notes:"Serves Mine Hill · Wharton · owner-operated ⚠ verify before visiting"},
+  {id:"ledgewood-auto-transmission",shop:"Ledgewood Auto Repair & Transmission",day:"Day 3",address:"Route 10, Ledgewood NJ 07852",phone:"(973) 347-1500",tags:[],stars:"",reviewInfo:"Family-owned since 2005",notes:"Est. 2005 · general repair + transmission · Roxbury Twp area"},
+  {id:"bargain-auto-dover",shop:"Bargain Complete Auto Service",day:"Day 3",address:"1 Mt Pleasant Ave, Dover NJ 07801",phone:"(973) 989-5700",tags:[],stars:"",reviewInfo:"Independent general repair",notes:"Independent · general repair · Dover ⚠ verify before visiting"},
+
+  // ── Day 4 — Wayne / Totowa / Little Falls / Woodland Park / Lincoln Park / Butler / Bloomingdale ──
+  {id:"bob-crevaux-wayne",shop:"Bob Crevaux's Wayne Auto Works",day:"Day 4",address:"1405 Hamburg Turnpike, Wayne NJ 07470",phone:"(973) 709-1115",tags:["Mitchell","Marquee","AutoTechIQ","Technet"],stars:"4.9",reviewInfo:"515 SureCritic · Mitchell1 CRM confirmed · TechNet member · AutoTechIQ listed",notes:"Full-service · M–F 7–5:30 ★★ MARQUEE"},
+  {id:"wayne-shell",shop:"Wayne Shell",day:"Day 4",address:"558 Alps Rd, Wayne NJ 07470",phone:"(973) 694-1653",tags:["Marquee","Technet"],stars:"4.9",reviewInfo:"860 SureCritic · active",notes:"Independent station repair · very high review volume ★★ MARQUEE"},
+  {id:"five-star-automotive-clifton",shop:"Five Star Automotive",day:"Day 4",address:"793 Van Houten Ave, Clifton NJ 07013",phone:"(973) 779-2249",tags:[],stars:"4.9",reviewInfo:"184 SureCritic · AAA Approved · ASE",notes:"Est. 1969 · brakes · suspension · tires · NJ inspection · M–F 8–5:30, Sat 8–12:30"},
+  {id:"little-falls-auto-service",shop:"Little Falls Auto Service",day:"Day 4",address:"119 Paterson Ave, Little Falls NJ 07424",phone:"(973) 237-1900",tags:[],stars:"4.9",reviewInfo:"188 SureCritic",notes:"Independent · general repair · M–F 8–5:30"},
+  {id:"angelos-auto-woodland-park",shop:"Angelo's Auto Repair",day:"Day 4",address:"1255 McBride Ave, Woodland Park NJ 07424",phone:"(973) 256-9800",tags:[],stars:"4.9",reviewInfo:"54 reviews · independent",notes:"Owner Angelo · M–F 7:30–5, Sat 7:30–12:30"},
+  {id:"pry-automotive-butler",shop:"Pry Automotive",day:"Day 4",address:"50 Boonton Ave, Butler NJ 07405",phone:"(973) 838-1656",tags:["Technet"],stars:"4.9",reviewInfo:"225 SureCritic",notes:"General repair · M–F 8–5:30 · Butler on NJ-23 corridor"},
+  {id:"happys-garage-bloomingdale",shop:"Happy's Garage II",day:"Day 4",address:"6 Main St, Bloomingdale NJ 07403",phone:"(973) 838-6001",tags:["Technet"],stars:"4.9",reviewInfo:"441 SureCritic · active",notes:"Trusted 20+ years · independent"},
+  {id:"bock-automotive-pequannock",shop:"Bock Automotive",day:"Day 4",address:"1 Irving St, Pequannock NJ 07440",phone:"(973) 694-1606",tags:["AutoTechIQ","Technet"],stars:"5.0",reviewInfo:"118 SureCritic · AutoTechIQ listed",notes:"Serves Lincoln Park · Wayne · Pompton Lakes · M–F 7–5"},
+  {id:"country-road-automotive-lincoln-park",shop:"Country Road Automotive",day:"Day 4",address:"580 Ryerson Rd, Lincoln Park NJ 07035",phone:"(973) 696-6636",tags:[],stars:"5.0",reviewInfo:"183 CARFAX · AAA Approved",notes:"Est. 1996 · owner Bob DeStefano · AAA · oil changes to engine overhauls · M–F 8–5:30, Sat 9–1"},
+
+  // ── Day 5 — Livingston / West Orange / Millburn / Maplewood / South Orange / Orange ──
+  {id:"new-palumbos-millburn",shop:"New Palumbo's",day:"Day 5",address:"238 Main St, Millburn NJ 07041",phone:"(973) 376-6631",tags:["Mitchell","Marquee"],stars:"5.0",reviewInfo:"2,831 SureCritic · Mitchell1 CRM confirmed",notes:"Full-service general repair · M–F 6:30–6 ★★ MARQUEE"},
+  {id:"bernies-tire-millburn",shop:"Bernie's Tire & Auto",day:"Day 5",address:"73 Millburn Ave, Millburn NJ 07041",phone:"(973) 763-4432",tags:["Marquee"],stars:"5.0",reviewInfo:"839 SureCritic · active",notes:"Owner-operated · tires, brakes, inspections, diagnostics · M–F 7–5 ★★ MARQUEE"},
+  {id:"livingston-tire",shop:"Livingston Tire Co.",day:"Day 5",address:"56 E Northfield Rd, Livingston NJ 07039",phone:"(973) 533-0101",tags:["Marquee"],stars:"4.9",reviewInfo:"1,110 SureCritic · AAA Approved · American Car Care Centers member",notes:"Est. 1929 · family-operated · AAA-approved only facility in area · ASE-certified ★★ MARQUEE"},
+  {id:"select-auto-west-orange",shop:"Select Auto & Truck Repair",day:"Day 5",address:"52 Washington St, West Orange NJ 07052",phone:"(973) 325-7898",tags:[],stars:"4.9",reviewInfo:"69 SureCritic · AAA Approved",notes:"30+ years · first green auto repair shop in Essex County · M–F 8–5 ⚠ verify open before visiting"},
+  {id:"jefferson-auto-west-orange",shop:"Jefferson Auto Repair & Towing",day:"Day 5",address:"356 Valley Rd, West Orange NJ 07052",phone:"(973) 736-7008",tags:[],stars:"4.2",reviewInfo:"Yelp-reviewed · 20+ years · locally owned",notes:"7-bay shop · fleet vehicles · M–F 7–5, Sat 7–3"},
+  {id:"richards-service-maplewood",shop:"Richard's Service Station",day:"Day 5",address:"1459 Springfield Ave, Maplewood NJ 07040",phone:"(973) 761-4717",tags:[],stars:"4.9",reviewInfo:"490 SureCritic · active",notes:"Owner-operated · gas station + full repair · M–Sat 8–5"},
+  {id:"definis-maplewood",shop:"De Finis Service Station",day:"Day 5",address:"2058 Millburn Ave, Maplewood NJ 07040",phone:"(973) 762-9788",tags:[],stars:"4.5",reviewInfo:"ACDelco authorized independent",notes:"Est. 1987 · owner Frank DeFinis · M–F 7–5:30, Sat 7–1"},
+  {id:"ramos-auto-orange",shop:"Ramos Auto Repair",day:"Day 5",address:"232 S Jefferson St, Orange NJ 07050",phone:"(973) 414-0100",tags:["Marquee"],stars:"4.9",reviewInfo:"697 SureCritic · active · ASE",notes:"25+ years · family-owned · M–F 8–6, Sat 8–2 ★★ MARQUEE"},
+  {id:"quality-auto-south-orange",shop:"Quality Auto & Tire Center",day:"Day 5",address:"254 Valley St, South Orange NJ 07079",phone:"(973) 762-0575",tags:[],stars:"4.5",reviewInfo:"46 SureCritic · multi-location (since 1981)",notes:"Since 1981 · M–F 8–6, Sat 8–4"},
+  {id:"ga-auto-livingston",shop:"G&A Auto Repair",day:"Day 5",address:"66 S Orange Ave, Livingston NJ 07039",phone:"(973) 447-1864",tags:[],stars:"4.9",reviewInfo:"15 CARFAX reviews",notes:"Newer shop · general repair · owner-operated"},
+
+  // ── Day 6 — Montclair / Bloomfield / Nutley / Belleville / Glen Ridge / Clifton east ──
+  {id:"agolia-sons-bloomfield",shop:"Agolia and Sons BP Amoco",day:"Day 6",address:"560 Broad St, Bloomfield NJ 07003",phone:"(973) 429-2009",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"776 SureCritic · Mitchell1 CRM confirmed · ACDelco affiliate",notes:"Est. 1959 · 3 generations · serves Bloomfield/Glen Ridge/Montclair/Nutley · M–F 8–6, Sat 8–2 ★★ MARQUEE"},
+  {id:"hoffmans-foreign-montclair",shop:"Hoffman's Foreign Auto",day:"Day 6",address:"81 Greenwood Ave, Montclair NJ 07042",phone:"(973) 744-6402",tags:["Marquee"],stars:"5.0",reviewInfo:"604 SureCritic · active · European/Asian specialist",notes:"25+ years · 1 min walk to Walnut St train · M–F 8–5:30 ★★ MARQUEE · import-focused"},
+  {id:"dees-jfk-bloomfield",shop:"Dee's JFK Service",day:"Day 6",address:"19 Beach St, Bloomfield NJ 07003",phone:"(973) 748-8873",tags:[],stars:"4.9",reviewInfo:"175 SureCritic · AAA Approved",notes:"Est. 1984 · family-owned · diesel + hybrid capable · AAA-approved · gas station on site"},
+  {id:"fix-n-fuel-bloomfield",shop:"Fix N Fuel",day:"Day 6",address:"109 Broughton Ave, Bloomfield NJ 07003",phone:"(973) 748-6088",tags:[],stars:"4.9",reviewInfo:"361 SureCritic · AAA Approved",notes:"AAA-approved · ASE-certified · M–F 8–5"},
+  {id:"quality-auto-bloomfield",shop:"Quality Auto & Tire Center — Bloomfield",day:"Day 6",address:"150 Bloomfield Ave, Bloomfield NJ 07003",phone:"(973) 743-7400",tags:[],stars:"4.8",reviewInfo:"266 SureCritic · since 1981",notes:"Multi-location (also South Orange, Roselle Park) · M–F 7:30–5:30, Sat 7:30–3:30"},
+  {id:"johnnys-service-nutley",shop:"Johnny's Service Station",day:"Day 6",address:"188 Bloomfield Ave, Nutley NJ 07110",phone:"(973) 235-0723",tags:[],stars:"4.5",reviewInfo:"Yelp-reviewed · Est. 1938",notes:"Est. 1938 · long-standing community fixture · ASE-certified · near Bloomfield/Belleville border"},
+  {id:"mikes-service-belleville",shop:"Mike's Service Center",day:"Day 6",address:"400 Union Ave, Belleville NJ 07109",phone:"(973) 751-9500",tags:[],stars:"4.6",reviewInfo:"212 Birdeye · Est. 1996",notes:"Est. 1996 · ASE-certified · classic/muscle car specialist · Corvette/GM LS expert · M–F 8–6, Sat 8–4"},
+  {id:"glen-ridge-auto",shop:"Glen Ridge Auto Inc.",day:"Day 6",address:"12 Herman St, Glen Ridge NJ 07028",phone:"(973) 743-2794",tags:[],stars:"4.9",reviewInfo:"Car Talk 4.9/5 · Nextdoor Neighborhood Fave 2017–2024",notes:"Est. 1979 · Kindberg brothers · community institution · small trusted shop"},
+  {id:"andrew-mols-montclair",shop:"Andrew Mols Auto Repair",day:"Day 6",address:"7 Label St, Montclair NJ 07042",phone:"(973) 744-2520",tags:[],stars:"4.6",reviewInfo:"64 reviews across platforms",notes:"Est. 2004 · locally owned · walk-from-downtown · M–Sat 8–6"},
+  {id:"krp-automotive-clifton",shop:"KRP Automotive Repair",day:"Day 6",address:"65 Lexington Ave, Clifton NJ 07011",phone:"(973) 604-8863",tags:["Technet"],stars:"4.9",reviewInfo:"93+ reviews · NAPA AutoCare confirmed",notes:"NAPA AutoCare center · independent · M–F 8:30–6"},
+  {id:"ez-autos-belleville",shop:"EZ Autos Repair",day:"Day 6",address:"473 Main St, Belleville NJ 07109",phone:"(973) 844-9090",tags:[],stars:"4.7",reviewInfo:"41 SureCritic · active",notes:"General repair + oil change · ASE · M–F 8–6"},
+
+  // ── Day 7 — Bridgewater / Somerville / Bernardsville / Basking Ridge / Bound Brook / Manville ──
+  {id:"corbos-automotive-somerville",shop:"Corbo's Automotive",day:"Day 7",address:"40 S Gaston Ave, Somerville NJ 08876",phone:"(908) 725-8834",tags:[],stars:"4.8",reviewInfo:"Family-owned ~60 years · bilingual staff (EN/ES/PT/PL/UK)",notes:"M–Th 8–8, F 8–7, Sa 8–1 · one of the longest-standing independents in Somerset County"},
+  {id:"somerville-shell-auto",shop:"Somerville Shell Auto Repair",day:"Day 7",address:"900 US-22, Somerville NJ 08876",phone:"(908) 526-1030",tags:["Mitchell","Technet"],stars:"5.0",reviewInfo:"118 SureCritic · Mitchell1 CRM confirmed",notes:"40+ years at this location · ASE certified · M–Sa 8–6"},
+  {id:"alan-son-car-care",shop:"Alan & Son Car Care Center",day:"Day 7",address:"988 US-202 S, Somerville NJ 08876",phone:"(908) 526-6556",tags:[],stars:"4.7",reviewInfo:"Family-owned 35+ years",notes:"M–F 7–6, Sa 8–12"},
+  {id:"midway-transmissions-bridgewater",shop:"Midway Transmissions & Auto Center",day:"Day 7",address:"49 Old York Rd, Bridgewater NJ 08807",phone:"(908) 526-5380",tags:["Marquee"],stars:"4.7",reviewInfo:"903 SureCritic · active",notes:"General repair + transmission · ASE certified · M–F 8–6, Sa 8–4 ★★ MARQUEE"},
+  {id:"bridgewater-motorworks",shop:"Bridgewater Motorworks",day:"Day 7",address:"358 Union Ave, Bridgewater NJ 08807",phone:"(908) 218-9100",tags:["AutoTechIQ"],stars:"4.8",reviewInfo:"AutoTechIQ listed · AAA Approved",notes:"Full service + engine/transmission · 21+ years · AAA Approved · M–F 8–5"},
+  {id:"densons-auto-bridgewater",shop:"Denson's Auto Repair",day:"Day 7",address:"1972 Washington Valley Rd, Bridgewater NJ 08836",phone:"(732) 560-7444",tags:[],stars:"4.6",reviewInfo:"Independent",notes:"Owner-operated · M–F 9–5"},
+  {id:"jaks-tire-bernardsville",shop:"JAK's Tire & Auto",day:"Day 7",address:"134 Morristown Rd, Bernardsville NJ 07924",phone:"(908) 221-1357",tags:[],stars:"4.8",reviewInfo:"Digital inspection shop · independent",notes:"M–F 8–5"},
+  {id:"prestige-auto-bernardsville",shop:"Prestige Auto Repair",day:"Day 7",address:"39 Mine Brook Rd, Bernardsville NJ 07924",phone:"(908) 766-7667",tags:[],stars:"4.9",reviewInfo:"Owner Jim Jackson since 1999",notes:"Full service foreign & domestic · long-standing Bernardsville indie"},
+  {id:"tulls-basking-ridge",shop:"Tull's Foreign & Domestic Auto Repairs",day:"Day 7",address:"130 S Finley Ave, Basking Ridge NJ 07920",phone:"(908) 766-0934",tags:[],stars:"4.5",reviewInfo:"Independent · foreign & domestic",notes:"M–F 8–5"},
+  {id:"nergers-auto-bound-brook",shop:"Nerger's Auto Express",day:"Day 7",address:"101 W Main St, Bound Brook NJ 08805",phone:"(732) 356-6060",tags:[],stars:"4.8",reviewInfo:"NAPA AutoCare · AAA Approved",notes:"NAPA AutoCare · AAA Approved · M–F 8–5, Sa 10–4"},
+  {id:"fisher-automotive-bound-brook",shop:"Fisher Automotive",day:"Day 7",address:"1580 Route 22, Bound Brook NJ 08805",phone:"(732) 469-0986",tags:[],stars:"4.7",reviewInfo:"Independent since 1999",notes:"Full service · M–F hours · Bound Brook on Rte 22"},
+  {id:"walko-automotive-hillsborough",shop:"Walko Automotive Service",day:"Day 7",address:"2122 W Camplain Rd, Hillsborough NJ 08844",phone:"(908) 526-6808",tags:[],stars:"4.8",reviewInfo:"Independent",notes:"M–F 7:30–5:30"},
+  {id:"dereks-auto-manville",shop:"Derek's Auto Service",day:"Day 7",address:"404 S Main St, Manville NJ 08835",phone:"(732) 709-3311",tags:[],stars:"4.6",reviewInfo:"Independent",notes:"Independent local shop · Manville"},
+  {id:"competitive-automotive-manville",shop:"Competitive Automotive",day:"Day 7",address:"427 N Main St, Manville NJ 08835",phone:"(908) 725-5529",tags:[],stars:"4.5",reviewInfo:"Independent",notes:"General repair · Manville · pair with Derek's same area"},
+
+  // ── Day 8 — Union / Springfield / Kenilworth / Clark / Cranford / Garwood / Roselle Park ──
+  {id:"south-orange-friendly-union",shop:"South Orange Friendly Service",day:"Day 8",address:"39 Milltown Rd, Union NJ 07083",phone:"(973) 762-3634",tags:["Mitchell","Marquee","Technet"],stars:"5.0",reviewInfo:"604 SureCritic · Mitchell1 CRM confirmed",notes:"Full service · M–F 7–5 · technically Union Twp, serves South Orange/Maplewood market ★★ MARQUEE"},
+  {id:"village-automotive-union",shop:"Village Automotive Services",day:"Day 8",address:"1225 Magie Ave, Union NJ 07083",phone:"(908) 289-1423",tags:["Marquee","Technet"],stars:"5.0",reviewInfo:"474 SureCritic · NAPA AutoCare · AAA Approved",notes:"NAPA AutoCare · AAA Approved · M–F 8–5, Sa 8–3:30 ★★ MARQUEE"},
+  {id:"pinkavas-motor-springfield",shop:"Pinkava's Motor Company",day:"Day 8",address:"4 Caldwell Pl, Springfield NJ 07081",phone:"(973) 376-0181",tags:[],stars:"5.0",reviewInfo:"230 SureCritic · AAA Approved · Est. 1910 — 4th generation",notes:"Est. 1910 · 4th-generation · ACDelco authorized · AAA Approved · M–F 8–6, Sa 8–5"},
+  {id:"quality-auto-roselle-park",shop:"Quality Auto & Tire Center — Roselle Park",day:"Day 8",address:"552 Westfield Ave W, Roselle Park NJ 07204",phone:"(908) 245-5300",tags:["Marquee"],stars:"4.8",reviewInfo:"813 SureCritic · family-owned since 1981",notes:"Family business since 1981 · 3 NJ locations · M–F 7:30–5:30, Sa 7:30–3:30 ★★ MARQUEE"},
+  {id:"dm-automotive-union",shop:"D&M Automotive",day:"Day 8",address:"959 Monroe St, Union NJ 07083",phone:"(908) 687-8344",tags:["AutoTechIQ"],stars:"4.7",reviewInfo:"AutoTechIQ listed · family-owned since 1991",notes:"Family-owned since 1991 · M–F 8–5, Sa 7–12"},
+  {id:"clarkes-auto-union",shop:"Clarke's Auto Repair",day:"Day 8",address:"1380 Stuyvesant Ave, Union NJ 07083",phone:"(908) 687-5900",tags:[],stars:"4.6",reviewInfo:"Independent",notes:"M–Sa 8:30–5"},
+  {id:"international-motor-group-union",shop:"International Motor Group",day:"Day 8",address:"1449 Stuyvesant Ave, Union NJ 07083",phone:"(908) 688-8118",tags:[],stars:"5.0",reviewInfo:"144 SureCritic · German car specialists + general service",notes:"M–Sa 8–6 (Sa 8–3) · German specialty + all makes"},
+  {id:"carmens-foreign-cranford",shop:"Carmen's Foreign Car Repair",day:"Day 8",address:"48 N Ave E, Cranford NJ 07016",phone:"(908) 272-8708",tags:["AutoTechIQ"],stars:"4.7",reviewInfo:"AutoTechIQ listed · Honda & Acura specialist · Est. 1986",notes:"Est. 1986 · M–F 8–6, Sa 8–1:30"},
+  {id:"carracinos-kenilworth",shop:"Carracino's Auto & Truck Service",day:"Day 8",address:"720 Federal Ave, Kenilworth NJ 07033",phone:"(908) 241-4001",tags:[],stars:"4.7",reviewInfo:"8,000 sq ft shop · 3 ASE certified techs · all makes + diesels",notes:"All makes/models + diesel · M–F 7–5"},
+  {id:"junior-complete-auto-clark",shop:"Junior Complete Auto Repair",day:"Day 8",address:"801 Raritan Rd, Clark NJ 07066",phone:"(908) 494-0003",tags:[],stars:"4.7",reviewInfo:"30+ years mechanic experience",notes:"M–F 8–6, Sa 8:30–2"},
+  {id:"brians-auto-garwood",shop:"Brian's Auto Repair",day:"Day 8",address:"50 North Ave, Garwood NJ 07027",phone:"(908) 654-9335",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"AutoTechIQ listed · Brian & Tim Pizzella · family-owned",notes:"M–F 7–6"},
+  {id:"south-ave-service-cranford",shop:"South Avenue Service & Auto",day:"Day 8",address:"23 South Ave W, Cranford NJ 07016",phone:"(908) 276-9800",tags:[],stars:"4.7",reviewInfo:"ACDelco parts · independent",notes:"M–F 8–6, Sa 8–2"},
+  {id:"legacy-mechanics-union",shop:"Legacy Mechanics",day:"Day 8",address:"415 Chestnut St, Union NJ 07083",phone:"(908) 964-7155",tags:[],stars:"4.8",reviewInfo:"Full service · independent",notes:"M–F 8–6, Sa 8–3"},
+
+  // ── Day 9 — Paramus / Hackensack / Teaneck / Lodi / Saddle Brook / Elmwood Park / River Edge ──
+  {id:"athens-auto-teaneck",shop:"Athens Auto",day:"Day 9",address:"1591 Teaneck Rd, Teaneck NJ 07666",phone:"(201) 837-1313",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"708 SureCritic · Mitchell1 CRM confirmed",notes:"Est. 1983 · owner-operated · full service domestic & foreign · M–F 8–5, Sat 8–1 ★★ MARQUEE"},
+  {id:"pro-auto-hackensack",shop:"Pro Auto Repair",day:"Day 9",address:"55 Midtown Bridge St, Hackensack NJ 07601",phone:"(201) 488-0334",tags:["AutoTechIQ"],stars:"4.5",reviewInfo:"157 Birdeye · AutoTechIQ listed",notes:"Independent · owner Carlos · M–F 8–6, Sat 8–1"},
+  {id:"cl-auto-hackensack",shop:"C&L Auto Repair",day:"Day 9",address:"141 Johnson Ave, Hackensack NJ 07601",phone:"(201) 426-0343",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"173 Birdeye · AutoTechIQ listed · opened 2010",notes:"ASE cert Lincoln Tech grad · M–F 8–5, Sat 9–3"},
+  {id:"hackensack-auto-spring",shop:"Hackensack Auto Spring & Wheel Alignment",day:"Day 9",address:"301 S River St, Hackensack NJ 07601",phone:"(201) 343-2602",tags:["AutoTechIQ"],stars:"4.5",reviewInfo:"AutoTechIQ listed · alignment specialist",notes:"Full service · alignment specialty · M–F 8–5"},
+  {id:"ideal-service-center-river-edge",shop:"Ideal Service Center",day:"Day 9",address:"594 Kinderkamack Rd, River Edge NJ 07661",phone:"(201) 261-2314",tags:[],stars:"5.0",reviewInfo:"226 CARFAX verified",notes:"Est. 1945 · family-owned · owner Vinny · M–F 8–5"},
+  {id:"eli-auto-teaneck",shop:"Eli Auto Services Center",day:"Day 9",address:"618 Cedar Ln, Teaneck NJ 07666",phone:"(201) 836-0455",tags:["AutoTechIQ"],stars:"4.9",reviewInfo:"136 Birdeye · AutoTechIQ listed · family-owned since 1997",notes:"All makes & models · M–Th 8–5, F 8–3"},
+  {id:"hios-auto-teaneck",shop:"Hios General Auto Repairs",day:"Day 9",address:"153 State St, Teaneck NJ 07666",phone:"(201) 833-4744",tags:[],stars:"4.8",reviewInfo:"Well-reviewed on Yelp",notes:"M–F 8–6, Sat 8–4"},
+  {id:"headmaster-saddle-brook",shop:"Headmaster Automotive",day:"Day 9",address:"263 State Route 46, Saddle Brook NJ 07663",phone:"(201) 843-6666",tags:[],stars:"4.5",reviewInfo:"196 SureCritic",notes:"Independent general repair · M–F 8–5, Sat 8–12"},
+  {id:"elmwood-certified-auto",shop:"Elmwood Certified Auto Service",day:"Day 9",address:"302 Broadway, Elmwood Park NJ 07407",phone:"(201) 797-5681",tags:["Technet"],stars:"4.9",reviewInfo:"170 Birdeye · TechNet member",notes:"Full service domestic & foreign · TechNet 24mo/24k warranty"},
+  {id:"mr-auto-lodi",shop:"M&R Auto Repair",day:"Day 9",address:"35 Terhune Ave, Lodi NJ 07644",phone:"(201) 566-0076",tags:[],stars:"4.8",reviewInfo:"101 reviews · BMW/Mercedes capable",notes:"Independent · foreign & domestic incl. BMW/Mercedes · M–Sa 8–6"},
+  {id:"best-auto-elmwood-park",shop:"Best Auto Service",day:"Day 9",address:"90 Midland Ave, Elmwood Park NJ 07407",phone:"(201) 791-1312",tags:[],stars:"4.7",reviewInfo:"Well-reviewed on multiple platforms",notes:"Full service · oil/brakes/diagnostics/emissions"},
+  {id:"paramus-servicenter",shop:"Paramus Servicenter",day:"Day 9",address:"86 E Ridgewood Ave, Paramus NJ 07652",phone:"(201) 634-8686",tags:[],stars:"4.2",reviewInfo:"Owner Joe · family-owned",notes:"Family-owned general repair · affordable"},
+
+  // ── Day 10 — Ridgewood / Ramsey / Mahwah / Wyckoff / Allendale / Waldwick ──
+  {id:"mahwah-sunoco",shop:"Mahwah Sunoco",day:"Day 10",address:"197 Franklin Tpke, Mahwah NJ 07430",phone:"(201) 529-3137",tags:["Mitchell","Marquee"],stars:"4.9",reviewInfo:"1,441 SureCritic · Mitchell1 CRM confirmed · AAA Approved",notes:"39+ years · nationwide warranty · full service auto/light truck · M–F 8–5, Sat 8–12 ★★ MARQUEE"},
+  {id:"community-auto-ramsey",shop:"Community Auto Service Center",day:"Day 10",address:"126 N Franklin Tpke, Ramsey NJ 07446",phone:"(201) 327-9436",tags:["Mitchell","Marquee","Technet"],stars:"4.9",reviewInfo:"2,086 SureCritic · Mitchell1 CRM confirmed",notes:"Est. 1978 · owner Doug · Michelin dealer · M–F 8–5, Sat 8–12 ★★ MARQUEE"},
+  {id:"ra-automotive-waldwick",shop:"R/A Automotive",day:"Day 10",address:"59 W Prospect St, Waldwick NJ 07463",phone:"(201) 652-5250",tags:["Mitchell"],stars:"5.0",reviewInfo:"88 SureCritic · Mitchell1 CRM confirmed",notes:"Owner Ron · 100% recommend rate · M–F 8–5"},
+  {id:"richters-ridgewood",shop:"Richter's Professional Tire & Auto Service",day:"Day 10",address:"209 S Maple Ave, Ridgewood NJ 07450",phone:"(201) 652-4818",tags:[],stars:"5.0",reviewInfo:"226 CARFAX · AAA Approved · RepairPal Certified",notes:"Est. 1935 · dealer alternative · full service M–F"},
+  {id:"mahwah-automotive-center",shop:"Mahwah Automotive Center",day:"Day 10",address:"Route 17, Ramsey NJ 07446",phone:"(201) 962-8380",tags:["Technet"],stars:"5.0",reviewInfo:"194 CARFAX · family-owned since 2004",notes:"ASE certified · all makes & models · M–F 8–5"},
+  {id:"godwin-auto-wyckoff",shop:"Godwin Automotive",day:"Day 10",address:"178 Godwin Ave, Wyckoff NJ 07481",phone:"(201) 891-2494",tags:[],stars:"4.9",reviewInfo:"43 Birdeye · 50+ years serving Wyckoff",notes:"NJ State Inspection · free estimates · 1-yr warranty"},
+  {id:"ozzys-auto-wyckoff",shop:"Ozzy's Auto Repair",day:"Day 10",address:"401 Goffle Rd, Wyckoff NJ 07481",phone:"(201) 857-0977",tags:[],stars:"4.9",reviewInfo:"143 reviews · 4.9 stars",notes:"ASE certified · 25 yrs experience · state inspections/alignments/diagnostics · M–F 8–6"},
+  {id:"allendale-auto-repair",shop:"Allendale Auto Repair",day:"Day 10",address:"41 Myrtle Ave, Allendale NJ 07401",phone:"(201) 327-3140",tags:[],stars:"5.0",reviewInfo:"50 CARFAX verified",notes:"Long-standing Bergen County full service · M–F 7:30–5"},
+  {id:"franklin-auto-waldwick",shop:"Franklin Auto Care",day:"Day 10",address:"172 Franklin Tpke, Waldwick NJ 07463",phone:"(201) 445-7636",tags:[],stars:"4.0",reviewInfo:"General repair · NJ state inspection",notes:"Owner Ken · M–F"},
+  {id:"eg-auto-wyckoff",shop:"E&G Auto Repair",day:"Day 10",address:"401 Goffle Rd, Wyckoff NJ 07481",phone:"(201) 857-3474",tags:[],stars:"4.7",reviewInfo:"Pickup & drop-off service",notes:"General repair · all makes & models · ⚠ same street as Ozzy's — verify separate shop"}
+
+]
+
+
+,"Mobile AL 10-Day": [
+  // ── Day 1 — West Mobile / Tillman's Corner / Airport Blvd West / Theodore ──
+  {id:"foreign-domestic-mobile",shop:"Foreign & Domestic Autocare",day:"Day 1",address:"5129 Schillinger Rd S, Mobile AL 36619",phone:"(251) 666-7421",tags:["AutoTechIQ","Technet"],stars:"5.0",reviewInfo:"1,588 SureCritic + AutoTechIQ confirmed",notes:"Nissan/all-makes specialists · Bob Rogers & Jon Taylor · 40+ yrs combined exp · flagship prospect — highest review count in market"},
+  {id:"swinneys-automotive",shop:"Swinney's Automotive",day:"Day 1",address:"5767 Plantation Rd, Theodore AL 36582",phone:"(251) 305-7000",tags:["Technet"],stars:"4.9",reviewInfo:"151 Birdeye · SureCritic + CARFAX confirmed",notes:"Owner Vernon praised by name · general repair + RV service · Theodore anchor"},
+  {id:"genes-auto-theodore",shop:"Gene's Auto Repair",day:"Day 1",address:"5995 Rangeline Rd, Theodore AL 36582",phone:"(251) 443-5566",tags:[],stars:"4.8",reviewInfo:"35 Birdeye",notes:"Long-standing Theodore shop · trusted/honest reputation · Mon-Thu 8-6, Fri 8-12"},
+  {id:"a1-auto-mobile",shop:"A-1 Auto Repair",day:"Day 1",address:"4914 Quimby Dr, Mobile AL 36619",phone:"(251) 650-4452",tags:[],stars:"4.8",reviewInfo:"36 Google",notes:"20+ yrs · Tillman's Corner / Theodore / Mobile coverage · brakes, A/C, timing belts"},
+  {id:"airport-tire-mobile",shop:"Airport Tire",day:"Day 1",address:"11000 Airport Blvd, Mobile AL 36608",phone:"(251) 633-8921",tags:[],stars:"4.6",reviewInfo:"272 Birdeye · SureCritic confirmed",notes:"Founded 1950 · Bo Lumpkin owner · 76+ yrs · tires + alignment + repair · true local institution · Sat 7:30-12"},
+  {id:"kcs-garage-mobile",shop:"KC's Garage & Hot Rod Shop",day:"Day 1",address:"10160 Airport Blvd Ste C, Mobile AL 36608",phone:"(251) 639-1433",tags:[],stars:null,reviewInfo:"Positive Yelp/Nextdoor",notes:"Family-owned · full service · Sat 7:30-2 — good for fleet owners · Airport Blvd corridor"},
+  {id:"anderson-auto-mobile",shop:"Anderson Automotive",day:"Day 1",address:"7915 Foxfire Dr, Mobile AL 36608",phone:"(251) 633-5558",tags:[],stars:"5.0",reviewInfo:"43 CARFAX verified",notes:"Oil change · steering/suspension · tire rotation · verify address before routing (two addresses appear in directories)"},
+  {id:"majestic-tire-mobile",shop:"Majestic Tire & Service",day:"Day 1",address:"7909 Airport Blvd, Mobile AL 36608",phone:"(251) 634-0313",tags:["Technet"],stars:"4.3",reviewInfo:"528 Google",notes:"21+ yrs · tires + alignment + general repair · locally owned · open Sundays"},
+  {id:"mcgugin-hillcrest",shop:"Mark McGugin Auto Repair — Hillcrest Rd",day:"Day 1",address:"2510 Hillcrest Rd, Mobile AL 36695",phone:"(251) 643-1741",tags:["MSO"],stars:null,reviewInfo:"CarTalk Mechanics Files · Loc8NearMe A+",notes:"MSO — 2 locations (Hillcrest + Cottage Hill) · owner Mark praised for honesty · visit one per day"},
+
+  // ── Day 2 — Downtown Mobile / Spring Hill / Prichard / Eight Mile ──
+  {id:"downtown-car-care",shop:"Downtown Car Care",day:"Day 2",address:"410 Saint Francis St, Mobile AL 36602",phone:"(251) 375-1246",tags:["Euro"],stars:"4.8",reviewInfo:"58 Google · SureCritic confirmed",notes:"Downtown's go-to indie · integrity and value praised · near waterfront · Mon-Fri 7:30-5:30"},
+  {id:"rr-auto-moffett",shop:"R&R Automotive",day:"Day 2",address:"3255 Moffett Rd B, Mobile AL 36607",phone:"(251) 476-2953",tags:[],stars:"4.7",reviewInfo:"198 Google · SureCritic + BBB A+",notes:"Founded Oct 2000 · 25+ yrs · one of city's highest-reviewed independents · possible 2-location MSO (verify Spring Hill Ave)"},
+  {id:"lm-tires-springhill",shop:"L&M Tires & Automotive",day:"Day 2",address:"3155 Spring Hill Ave, Mobile AL 36607",phone:"(251) 479-8544",tags:[],stars:null,reviewInfo:"BBB A+",notes:"Founded 1959 · 65+ yrs on Spring Hill Ave · tires + full repair + A/C + suspension · Sat 7:30-4:30"},
+  {id:"port-city-foreign",shop:"Port City Foreign Car Service",day:"Day 2",address:"2308 Halls Mill Rd, Mobile AL 36606",phone:"(251) 473-1456",tags:["Euro","Technet"],stars:"4.5",reviewInfo:"52 Birdeye",notes:"40+ yrs · import specialist · Tim Lawrence owner · same zip as TopGolf — 5 min away"},
+  {id:"mj-auto-eight-mile",shop:"M&J Auto Repair",day:"Day 2",address:"5865 US-45, Eight Mile AL 36613",phone:null,tags:[],stars:"4.7",reviewInfo:"38 Yelp",notes:"Eight Mile US-45 corridor · above-average Yelp score · verify phone before routing"},
+  {id:"dads-auto-eight-mile",shop:"Dad's Auto Repair",day:"Day 2",address:"US-45 corridor, Eight Mile AL 36613",phone:null,tags:[],stars:"4.8",reviewInfo:"20 Google",notes:"Strong per-review score · verify exact address via Google Maps before routing"},
+  {id:"ball-auto-eight-mile",shop:"Ball Automotive",day:"Day 2",address:"8820H Broadus Loop Rd, Eight Mile AL 36613",phone:null,tags:[],stars:"5.0",reviewInfo:"4 reviews (low volume — verify)",notes:"All makes/models · very few reviews — confirm active before routing"},
+  {id:"cm-auto-eight-mile",shop:"CM Automotive LLC",day:"Day 2",address:"4505 W Myers Rd, Eight Mile AL 36613",phone:null,tags:[],stars:"4.3",reviewInfo:"11 Google",notes:"Eight Mile general repair · lower review count"},
+  {id:"shanes-automotive-mobile",shop:"Shane's Automotive",day:"Day 2",address:"2565 Halls Mill Rd, Mobile AL 36606",phone:"(251) 478-2500",tags:["Euro"],stars:null,reviewInfo:"BimmerShops · BenzShops · VCarShops · SaabShops confirmed",notes:"Full European import specialist · BMW, Mercedes, Audi, VW, Saab, Infiniti, Acura · Halls Mill Rd near TopGolf — HIGH PRIORITY EURO"},
+  {id:"oil-xperts-mobile",shop:"Oil Xperts",day:"Day 2",address:"2451 Government St, Mobile AL 36606",phone:"(251) 219-6945",tags:[],stars:"4.8",reviewInfo:"72 CARFAX verified",notes:"Oil/maintenance/transmission service · downtown Government St corridor"},
+
+  // ── Day 3 — East Mobile / Zeigler Blvd / I-65 South / Government Blvd ──
+  {id:"franklin-auto-mobile",shop:"Franklin Automotive",day:"Day 3",address:"575 Snow Rd S, Mobile AL 36608",phone:"(251) 241-8075",tags:["AutoTechIQ","Technet"],stars:"5.0",reviewInfo:"129 CARFAX + AutoTechIQ confirmed",notes:"Founded 1962 by Gerald Franklin · 60+ yr legacy · 75+ yrs combined tech exp · imports + domestic · flagship quality prospect"},
+  {id:"spectrum-auto-mobile",shop:"Spectrum Automotive & Tire Solutions",day:"Day 3",address:"7050 Airport Blvd, Mobile AL 36608",phone:"(251) 445-0004",tags:["AutoTechIQ","Technet"],stars:"4.9",reviewInfo:"144 Birdeye · SureCritic + AutoTechIQ confirmed",notes:"Fastest-growing review presence · loyal following · strong Mitchell profile"},
+  {id:"pauls-auto-mobile",shop:"Paul's Automotive Inc",day:"Day 3",address:"50 Schillinger Rd N, Mobile AL 36608",phone:"(251) 631-3925",tags:[],stars:null,reviewInfo:"SureCritic + CARFAX confirmed · BBB accredited 1999",notes:"25+ yrs · long-term customer relationships · two addresses in directories — call first"},
+  {id:"resters-auto",shop:"Rester's Auto Inc",day:"Day 3",address:"7850 Zeigler Blvd, Mobile AL 36608",phone:"(251) 633-9514",tags:[],stars:"5.0",reviewInfo:"51 CARFAX + 97 Birdeye · SureCritic confirmed",notes:"Ronnie Rester Sr. owner · Honda specialist/all makes · CARFAX 5.0 · Mon-Thu 7:30-5, Fri 7:30-4"},
+  {id:"crowell-auto",shop:"Crowell Automotive",day:"Day 3",address:"1530C W I-65 Service Rd, Mobile AL 36693",phone:"(251) 661-1445",tags:[],stars:"4.6",reviewInfo:"95 Birdeye",notes:"Family-run 20+ yrs · full service · electrical, check engine, brakes, engine/trans replacement"},
+  {id:"german-auto-mobile",shop:"German Automotive Services",day:"Day 3",address:"3747 Government Blvd Ste A, Mobile AL 36693",phone:"(251) 610-7946",tags:["Caveat","Euro"],stars:null,reviewInfo:"BimmerShops + BenzShops confirmed",notes:"BMW/Mercedes specialist — verify general repair scope before visit"},
+  {id:"mcgugin-cottage-hill",shop:"Mark McGugin Auto Repair — Cottage Hill Rd",day:"Day 3",address:"5401 Cottage Hill Rd Ste D, Mobile AL 36609",phone:"(251) 643-1741",tags:["MSO"],stars:null,reviewInfo:"CarTalk Mechanics Files · Loc8NearMe A+",notes:"MSO location 2 of 2 · same owner/phone as Hillcrest · pair with Crowell same day"},
+  {id:"mcconnell-auto-mobile",shop:"McConnell Automotive LLC",day:"Day 3",address:"3150 Dauphin St, Mobile AL 36606",phone:"(251) 476-4141",tags:[],stars:"4.6",reviewInfo:"297 CARFAX verified",notes:"High review count for Mobile independent · full service · Dauphin St midtown corridor"},
+  {id:"milestone-auto-mobile",shop:"Milestone Automotive Service Center",day:"Day 3",address:"1527 Navco Rd, Mobile AL 36605",phone:"(251) 473-2100",tags:["Technet"],stars:"4.8",reviewInfo:"29 CARFAX verified",notes:"South Mobile · oil, tire rotation, general maintenance"},
+
+  // ── Day 4 — North Mobile / Saraland / Satsuma ──
+  {id:"lp-auto-saraland",shop:"L&P Auto Repair LLC",day:"Day 4",address:"427 Saraland Blvd S, Saraland AL 36571",phone:"(251) 442-8948",tags:[],stars:"4.9",reviewInfo:"41 CARFAX + 117 Birdeye · SureCritic confirmed",notes:"Family-owned 2012 · ASE-certified · full repair incl. engine/trans rebuilds · 30+ yrs combined exp · ~15 min north on I-65"},
+  {id:"as-auto-saraland",shop:"A&S Auto Repair & Tire Shop",day:"Day 4",address:"914 Saraland Blvd S Ste B, Saraland AL 36571",phone:"(251) 219-7310",tags:[],stars:"5.0",reviewInfo:"15 CARFAX verified",notes:"Founded 2019 · ASE-trained team · all makes/models · full general repair"},
+  {id:"quality-auto-saraland",shop:"Quality Automotive",day:"Day 4",address:"111 Park Dr, Saraland AL 36571",phone:"(251) 679-0313",tags:[],stars:null,reviewInfo:"Own website · general repair",notes:"qualityautoshop.com · M-F 8-5 · low review volume but no negative signals"},
+  {id:"satsuma-autoworks",shop:"Satsuma Autoworks & Performance",day:"Day 4",address:"5703 US-43, Satsuma AL 36572",phone:"(251) 679-5883",tags:[],stars:"4.4",reviewInfo:"35 Birdeye",notes:"General repair + performance · Mon-Thu 8-5, Fri 8-12 · US-43 corridor"},
+  {id:"rolands-automotive",shop:"Roland's Automotive",day:"Day 4",address:"5473 US-43, Satsuma AL 36572",phone:"(251) 348-7041",tags:[],stars:null,reviewInfo:"Long-established community presence",notes:"US-43 corridor · general mechanic · pair with Satsuma Autoworks same road"},
+  {id:"pelc-tire-saraland",shop:"Pelc Tire & Service — Saraland",day:"Day 4",address:"67 Shell St, Saraland AL 36571",phone:null,tags:["MSO"],stars:"4.9",reviewInfo:"High CARFAX volume",notes:"MSO — 4 locations (Saraland, Fairhope, Daphne, Mobile) · Founded 1965 · ASE · Bridgestone/Michelin dealer"},
+  {id:"dt-auto-citronelle",shop:"D&T Automotive",day:"Day 4",address:"18670 US-45, Citronelle AL 36522",phone:"(251) 866-9002",tags:[],stars:"4.5",reviewInfo:"63 Birdeye",notes:"General repair + light towing · ~35 min (borderline — confirm before routing) · fair pricing reputation"},
+  {id:"stokleys-auto-mobile",shop:"Stokley's Automotive Service",day:"Day 4",address:"928 Butler Dr, Mobile AL 36617",phone:"(251) 456-9300",tags:["Technet"],stars:"4.7",reviewInfo:"CARFAX verified · TechNet member",notes:"TechNet member · full general repair · northern Mobile corridor near Prichard"},
+  {id:"bruce-duhe-tires",shop:"Bruce Duhe Tires & Auto",day:"Day 4",address:"5030 Rangeline Rd, Mobile AL 36619",phone:"(251) 666-4321",tags:["Technet"],stars:null,reviewInfo:"TechNet verified",notes:"TechNet member · tire + auto service · Rangeline Rd corridor west Mobile — verify phone before routing"},
+  {id:"drive-out-saraland",shop:"Drive Out LLC",day:"Day 4",address:"Saraland, AL 36571",phone:null,tags:["Technet"],stars:null,reviewInfo:"TechNet verified",notes:"TechNet member · Saraland area · confirm exact address via Google Maps before routing"},
+
+  // ── Day 5 — Eastern Shore: Daphne / Fairhope / Spanish Fort / Loxley ──
+  {id:"goens-auto-daphne",shop:"Goens Automotive LLC",day:"Day 5",address:"904 US Hwy 98, Daphne AL 36526",phone:"(251) 621-1003",tags:[],stars:"5.0",reviewInfo:"15 CARFAX + 68 Birdeye · SureCritic confirmed",notes:"Founded 2004 · 20+ yrs · Robert Goens owner · general repair · ~22 min via I-10 Bayway"},
+  {id:"ms-tire-fairhope",shop:"M&S Tire & Service",day:"Day 5",address:"22941 US-98, Fairhope AL 36532",phone:"(251) 928-4774",tags:[],stars:"4.8",reviewInfo:"31 Google",notes:"Veteran/family-owned since 1972 · 50+ yrs · full repair + tires · Mon-Fri 7:30-5"},
+  {id:"pelc-tire-fairhope",shop:"Pelc Tire & Service — Fairhope",day:"Day 5",address:"19526 S Greeno Rd, Fairhope AL 36532",phone:"(251) 928-5613",tags:["MSO"],stars:"4.9",reviewInfo:"497 CARFAX verified",notes:"MSO location 2 (Fairhope) · 4 total locations · ASE · Bridgestone/Michelin dealer · very high review volume"},
+  {id:"lotts-auto-fairhope",shop:"Lott's Auto Care",day:"Day 5",address:"22886-I US Hwy 98, Fairhope AL 36532",phone:"(251) 928-8183",tags:[],stars:"4.4",reviewInfo:"68 Google · CARFAX confirmed",notes:"27+ yr customer relationship history · owner-operated · fair pricing reputation"},
+  {id:"andrews-diesel-spanishfort",shop:"Andrew's Diesel & Automotive",day:"Day 5",address:"11340 US Hwy 31 Ste B, Spanish Fort AL 36527",phone:"(251) 375-0748",tags:[],stars:null,reviewInfo:"Mon-Sat 8AM-6PM",notes:"General repair + diesel · trucks and cars · Mon-Sat · Spanish Fort on US-31 · ~20 min"},
+  {id:"sweat-tire-loxley",shop:"Sweat Tire — Loxley",day:"Day 5",address:"29395 County Rd 49, Loxley AL 36551",phone:"(251) 964-8473",tags:["MSO"],stars:"5.0",reviewInfo:"22 CARFAX verified",notes:"MSO — 10+ locations across southern AL · 60+ yrs · family-owned regional chain · ~30 min via I-10"},
+  {id:"jordan-automotive-daphne",shop:"Jordan Automotive Inc",day:"Day 5",address:"1055 Stanton Rd, Daphne AL 36526",phone:"(251) 572-4964",tags:["Euro"],stars:"5.0",reviewInfo:"70 CARFAX / 86 Birdeye · 495 CARFAX favorites",notes:"Euro/import specialist · Mercedes, Volvo, BMW, Mini, VW, Audi, Lexus · Master techs 40+ yrs exp · HIGH PRIORITY EURO"},
+  {id:"parrish-tire-daphne",shop:"Parrish Tire & Service Center",day:"Day 5",address:"27121 Highway 181, Daphne AL 36526",phone:"(251) 626-5480",tags:["Technet"],stars:"4.8",reviewInfo:"65 CARFAX verified",notes:"Full service · oil, tires, steering & suspension · Hwy 181 corridor Daphne"},
+
+  // ── Day 6 — Baldwin County: Foley / Robertsdale / Bay Minette ──
+  {id:"foley-service-center",shop:"Foley Service Center LLC",day:"Day 6",address:"402 N McKenzie St, Foley AL 36535",phone:"(251) 943-1611",tags:[],stars:"4.7",reviewInfo:"107 Google + 52 CARFAX · BBB A+",notes:"Founded 1974 · 51+ yrs · full general repair · customers praise over dealership pricing · ~33 min"},
+  {id:"doering-tire-foley",shop:"Doering Tire Service & Automotive",day:"Day 6",address:"409 N McKenzie St, Foley AL 36535",phone:"(251) 943-8523",tags:[],stars:"4.4",reviewInfo:"208 Birdeye + 77 CARFAX · SureCritic confirmed",notes:"Paul Doering · family-owned · BFGoodrich dealer · computerized alignment/engine analysis · Mon-Fri 8-5 · Foley anchor"},
+  {id:"gulf-coast-auto-foley",shop:"Gulf Coast Auto Repair",day:"Day 6",address:"11426 County Rd 65 #2, Foley AL 36535",phone:"(251) 952-1414",tags:[],stars:"4.7",reviewInfo:"142 Birdeye · BBB A+",notes:"Stephen Romanstine owner · 10+ yrs · honest pricing praised · Mon-Fri 9-5"},
+  {id:"bd-auto-robertsdale",shop:"B&D Automotive",day:"Day 6",address:"22345 State Hwy 59 S, Robertsdale AL 36567",phone:"(251) 947-4400",tags:[],stars:"5.0",reviewInfo:"15 CARFAX verified",notes:"43+ yrs · gas + diesel + fleet + RV · owner Bruce praised for trustworthiness · ~30 min via I-65 S"},
+  {id:"hhh-autocare-bayminette",shop:"HHH Autocare",day:"Day 6",address:"2307-C S US Hwy 31, Bay Minette AL 36507",phone:"(251) 597-0687",tags:[],stars:"4.6",reviewInfo:"116 Birdeye · 98% recommend Facebook",notes:"Henry & Matthew Hadley · ASE-certified · hybrid-capable · Sat 9-4 · Bay Minette ~35 min"},
+  {id:"hr-auto-bayminette",shop:"H&R Auto Repair",day:"Day 6",address:"101 Graham Dr, Bay Minette AL 36507",phone:null,tags:[],stars:"4.8",reviewInfo:"5 reviews (low volume)",notes:"Independent general repair · consistent high score despite few reviews · Bay Minette — pair with HHH same area"},
+
+  // ── Day 6 addition (was from prior session) ──
+  {id:"djs-auto-gulf-shores",shop:"D.J.'s Auto Service Center",day:"Day 6",address:"1562 Gulf Shores Pkwy, Gulf Shores AL 36542",phone:"(251) 651-1312",tags:[],stars:"4.9",reviewInfo:"132 CARFAX verified",notes:"Best-reviewed independent in Gulf Shores · oil, AC, general repair · Mason praised by name"},
+
+  // ── Day 7 — Semmes / Chickasaw / Northwest Mobile ──
+  {id:"gulf-coast-tire-moffett",shop:"Gulf Coast Tire & Auto Repair",day:"Day 7",address:"4058 Moffett Rd, Mobile AL 36618",phone:"(251) 333-5880",tags:[],stars:"5.0",reviewInfo:"24 CARFAX verified",notes:"Tire/suspension/brakes · no upsell pressure · independent on Moffett Rd corridor"},
+  {id:"resters-auto-day7",shop:"Rester's Auto Inc",day:"Day 7",address:"7850 Zeigler Blvd, Mobile AL 36608",phone:"(251) 633-9514",tags:[],stars:"5.0",reviewInfo:"55 CARFAX · 97 Birdeye · 376 CARFAX favorites",notes:"Ronnie Rester Sr. · Honda specialist/all makes · Mon-Thu 7:30-5, Fri 7:30-4 · pairs well with Snow Rd corridor"},
+  {id:"ac-kyser-chickasaw",shop:"A C Kyser Auto Repair",day:"Day 7",address:"Chickasaw, AL 36611",phone:null,tags:[],stars:"4.8",reviewInfo:"27 Birdeye",notes:"Highest-rated independent in Chickasaw proper · confirm address/phone via Google Maps before routing"},
+  {id:"hodges-auto-wilmer",shop:"Hodges Automotive & Tire — Wilmer",day:"Day 7",address:"11410 Moffett Rd, Wilmer AL 36587",phone:"(251) 725-9844",tags:["Technet"],stars:"5.0",reviewInfo:"10 CARFAX verified",notes:"TechNet member · oil/tires/brakes · honest/fair · Wilmer on Moffett Rd toward Semmes"},
+  {id:"pauls-auto-highland",shop:"Paul's Automotive",day:"Day 7",address:"7740 Highland Ave, Mobile AL 36608",phone:"(251) 631-3925",tags:[],stars:"4.6",reviewInfo:"25 CARFAX verified",notes:"Engine/maintenance/oil · independent near Airport Blvd area"},
+  {id:"anderson-auto-day7",shop:"Anderson Automotive",day:"Day 7",address:"7915 Foxfire Dr, Mobile AL 36608",phone:"(251) 633-5558",tags:[],stars:"5.0",reviewInfo:"46 CARFAX verified",notes:"Oil/suspension/tires · 5-star near Moffett/Airport area"},
+
+  // ── Day 8 — Pensacola FL + Gulf Breeze + Milton ──
+  {id:"fairfield-imports-pensacola",shop:"Fairfield Imports",day:"Day 8",address:"1717 W Fairfield Dr, Pensacola FL 32501",phone:"(850) 433-0900",tags:["Euro"],stars:"4.9",reviewInfo:"182 CARFAX verified · BimmerShops listed",notes:"BMW/MINI/Rolls Royce only · 3rd-generation German mechanic · BMW Next diagnostics — HIGH PRIORITY EURO"},
+  {id:"palafox-imports-pensacola",shop:"Palafox Imports Inc",day:"Day 8",address:"4040 N Palafox St, Pensacola FL 32505",phone:"(850) 898-3330",tags:["Euro"],stars:"5.0",reviewInfo:"94 CARFAX verified · BenzShops listed",notes:"European/Asian imports — Mercedes, BMW · full-service European specialist — HIGH PRIORITY EURO"},
+  {id:"runway-imports-pensacola",shop:"Runway Imports",day:"Day 8",address:"6606 N 9th Ave, Pensacola FL 32504",phone:"(850) 477-0216",tags:["Euro"],stars:"4.5",reviewInfo:"BimmerShops + BenzShops listed · Est. 1979",notes:"European + Asian imports · 45+ yr shop · BMW dealer-level diagnostics — HIGH PRIORITY EURO"},
+  {id:"automotive-alternative-pensacola",shop:"Automotive Alternative Inc",day:"Day 8",address:"6426 Pensacola Blvd, Pensacola FL 32505",phone:"(850) 987-0279",tags:[],stars:"4.8",reviewInfo:"168 CARFAX · 1,338 SureCritic reviews · 40+ yrs",notes:"One of highest-volume review shops in Pensacola · all makes"},
+  {id:"cannon-auto-pensacola",shop:"Cannon Automotive LLC",day:"Day 8",address:"1501 N Palafox St, Pensacola FL 32501",phone:"(850) 932-7575",tags:[],stars:"4.9",reviewInfo:"77 CARFAX verified",notes:"Oil/brakes/AC · full-service · downtown Pensacola independent"},
+  {id:"tire-trust-pensacola",shop:"Tire Trust Inc",day:"Day 8",address:"10 W Gregory St, Pensacola FL 32502",phone:"(850) 533-8345",tags:[],stars:"5.0",reviewInfo:"120 CARFAX verified",notes:"Tire/oil/service · 25-year customer loyalty · downtown Pensacola anchor"},
+  {id:"debroux-auto-pensacola",shop:"DeBroux Automotive Inc",day:"Day 8",address:"9009 N Davis Hwy, Pensacola FL 32514",phone:"(850) 750-9177",tags:[],stars:"4.9",reviewInfo:"116 CARFAX verified",notes:"Engine/battery/oil · honest and professional · strong north Pensacola independent"},
+  {id:"profast-auto-pensacola",shop:"ProFast Auto Service",day:"Day 8",address:"6308 N Davis Hwy, Pensacola FL 32504",phone:"(850) 446-5503",tags:[],stars:"4.9",reviewInfo:"86 CARFAX verified",notes:"AC/oil/maintenance · near N 9th Ave/Davis Hwy corridor"},
+  {id:"gulf-breeze-tire",shop:"Gulf Breeze Tire Centre",day:"Day 8",address:"2983 Gulf Breeze Pkwy, Gulf Breeze FL 32563",phone:"(850) 780-5087",tags:[],stars:"5.0",reviewInfo:"199 CARFAX verified",notes:"Tire/oil/full service · best-reviewed shop in Gulf Breeze · honest/fair pricing"},
+  {id:"macs-auto-milton",shop:"Mac's Auto Service",day:"Day 8",address:"5404 Stewart St, Milton FL 32570",phone:"(850) 660-9638",tags:[],stars:"4.9",reviewInfo:"41 CARFAX verified",notes:"Tire/oil/maintenance · top independent in Milton"},
+  {id:"all-pro-tune-milton",shop:"All Pro Tune Up",day:"Day 8",address:"6216 Highway 90, Milton FL 32570",phone:"(850) 790-7991",tags:[],stars:"4.8",reviewInfo:"496 CARFAX verified",notes:"Full-service · engine/electrical/oil · high-volume quality independent on Hwy 90 Milton"},
+  {id:"eddie-hobbs-auto-milton",shop:"Eddie Hobbs Automotive Inc",day:"Day 8",address:"4436 Woodbine Rd, Milton FL 32571",phone:"(850) 920-7631",tags:[],stars:"5.0",reviewInfo:"160 CARFAX verified",notes:"Tire/oil/full service · strong independent east of Milton"},
+
+  // ── Day 9 — Mississippi Gulf Coast (Pascagoula / Ocean Springs / D'Iberville) ──
+  {id:"aa-auto-ocean-springs",shop:"A & A Automotive Repair",day:"Day 9",address:"3006 Government St, Ocean Springs MS 39564",phone:"(228) 338-3828",tags:[],stars:"4.9",reviewInfo:"238 CARFAX verified · 1,387 CARFAX favorites",notes:"Tire/oil/rotation · highest-trust independent on MS Gulf Coast · standout by review volume"},
+  {id:"pascagoula-tire-service",shop:"Pascagoula Tire & Service",day:"Day 9",address:"3135 Market St, Pascagoula MS 39567",phone:"(228) 335-6220",tags:[],stars:"4.9",reviewInfo:"97 CARFAX verified · 287 CARFAX favorites",notes:"Tire/oil/rotation · always friendly and trustworthy · top independent in Pascagoula"},
+  {id:"coastal-auto-pascagoula",shop:"Coastal Automotive",day:"Day 9",address:"1214 Live Oak Ave, Pascagoula MS 39567",phone:"(228) 200-0774",tags:[],stars:"4.8",reviewInfo:"44 CARFAX verified · 235 CARFAX favorites",notes:"Oil/engine/AC · independent · online scheduling"},
+  {id:"clarks-car-care-pascagoula",shop:"Clark's Professional Car Care",day:"Day 9",address:"3401 Hospital St, Pascagoula MS 39581",phone:"(228) 203-8605",tags:["RepairPal"],stars:"4.7",reviewInfo:"96 CARFAX verified · 615 CARFAX favorites · RepairPal certified",notes:"Tire/oil/rotation · high community trust · online scheduling · RepairPal verified"},
+  {id:"delta-world-tire-pascagoula",shop:"Delta World Tire Company",day:"Day 9",address:"2011 Denny Ave, Pascagoula MS 39567",phone:"(228) 762-4287",tags:["RepairPal"],stars:"4.8",reviewInfo:"124 CARFAX verified · RepairPal 4.5/25 reviews",notes:"Tire/oil/rotation · full-service tire + auto · RepairPal certified"},
+  {id:"bobby-tysons-ocean-springs",shop:"Bobby Tyson's Tire & Auto",day:"Day 9",address:"2701 Bienville Blvd, Ocean Springs MS 39564",phone:"(228) 678-8819",tags:[],stars:"4.9",reviewInfo:"50 CARFAX verified",notes:"Tire/oil/rotation · quick and efficient · independent on Bienville Blvd"},
+  {id:"bens-pacer-ocean-springs",shop:"Ben's Pacer Tire",day:"Day 9",address:"2313 Government St, Ocean Springs MS 39564",phone:"(228) 875-2541",tags:[],stars:"4.8",reviewInfo:"21 CARFAX verified",notes:"Engine/AC/suspension/oil · owner-operated · timing belt/AC/suspension specialist"},
+  {id:"clarks-car-care-diberville",shop:"Clark's Professional Car Care — D'Iberville",day:"Day 9",address:"10373 D'Iberville Blvd, D'Iberville MS 39540",phone:"(228) 392-5298",tags:[],stars:"4.8",reviewInfo:"66 CARFAX verified",notes:"Tire/oil/brakes · consistent brand (2nd Clark's location) · impeccable customer service"},
+
+  // ── Day 10 — Atmore / Brewton / Evergreen / Monroeville (rural AL loop) ──
+  {id:"interstate-towing-evergreen",shop:"Interstate Towing and Tire Pros",day:"Day 10",address:"1071 W Front St, Evergreen AL 36401",phone:"(251) 578-2447",tags:[],stars:"4.8",reviewInfo:"63 CARFAX verified",notes:"Tire/oil/towing · best-rated independent in Evergreen · 21 CARFAX favorites"},
+  {id:"deeses-monroeville",shop:"Deese's Service Station",day:"Day 10",address:"43 AL-21, Monroeville AL 36460",phone:"(251) 714-0506",tags:[],stars:"4.9",reviewInfo:"43 CARFAX verified",notes:"Tire/oil/rotation · consistently good per reviews · established Monroeville independent"},
+  {id:"sweat-tire-monroeville",shop:"Sweat Tire Pros — Monroeville",day:"Day 10",address:"1385 S Alabama Ave, Monroeville AL 36460",phone:"(251) 575-2990",tags:["MSO"],stars:"4.9",reviewInfo:"26 CARFAX verified",notes:"MSO — regional Sweat Tire chain · full-service tire + auto · Monroeville anchor"},
+  {id:"performance-tire-brewton",shop:"Performance Tire & Wheel",day:"Day 10",address:"1467 South Blvd, Brewton AL 36426",phone:"(251) 336-6681",tags:[],stars:"4.9",reviewInfo:"46 CARFAX verified · 84 CARFAX favorites",notes:"Tire/oil/rotation · honest and fair · top independent in Brewton"},
+  {id:"sweat-tire-atmore",shop:"Sweat Tire Pros — Atmore",day:"Day 10",address:"122 E Nashville Ave, Atmore AL 36502",phone:"(251) 368-8085",tags:["MSO"],stars:"5.0",reviewInfo:"39 CARFAX verified",notes:"Regional tire + auto MSO (same Sweat Tire brand as Loxley) · strong Atmore location"},
+  {id:"atmore-tire-alignment",shop:"Atmore Tire & Alignment Center",day:"Day 10",address:"103 N 2nd Ave, Atmore AL 36502",phone:"(251) 368-0060",tags:[],stars:"5.0",reviewInfo:"65 CARFAX verified",notes:"Tire/alignment/oil · best-reviewed shop in Atmore · great customer service and price"},
+  {id:"performance-auto-diesel-monroeville",shop:"Performance Automotive & Diesel Inc",day:"Day 10",address:"1367 S Alabama Ave, Monroeville AL 36460",phone:"(251) 714-2800",tags:[],stars:"5.0",reviewInfo:"5 CARFAX verified",notes:"Diesel specialist + engine/oil/AC · Monroeville · small volume but 5-star diesel shop"}
+]
+};
+
+// ─────────────────────────────────────────────────────────────
+// NO-VISIT DATA — existing Tekmetric customers by plan
+// ─────────────────────────────────────────────────────────────
+const NO_VISIT = {
+
+"Pittsburgh 1.5-Day": [
+  {shop:"Complete Service Center",city:"Finleyville, PA",address:"53 McChain Rd",notes:"Existing Tekmetric customer — 2 contacts (also Bentleyville location). Washington County, ~20 miles south of Pittsburgh."},
+  {shop:"Sutton Tire & Auto Service",city:"Butler, PA",notes:"Existing Tekmetric customer — Butler County, north of Pittsburgh. Strong regional proof point."},
+  {shop:"Strother Brothers Auto Care",city:"Mars, PA",notes:"Existing Tekmetric customer — Mars, PA (Butler County / North Hills corridor)."},
+  {shop:"TJ's Auto Truck & Trailer Repair",city:"Carnegie, PA",notes:"Existing Tekmetric customer — Carnegie, PA (South Hills / Chartiers Valley area)."},
+  {shop:"Hetrick's Tire & Auto Service",city:"Pittsburgh, PA",notes:"Existing Tekmetric customer — Pittsburgh address. Use as local proof point with any Pittsburgh-city prospect."},
+  {shop:"Tevis Auto Service",city:"Pittsburgh, PA",notes:"Existing Tekmetric customer — Pittsburgh address."},
+  {shop:"D & S Auto Care Pittsburgh",city:"Pittsburgh, PA",notes:"Existing Tekmetric customer — Pittsburgh address."},
+  {shop:"Chris Car Care Pittsburgh",city:"Pittsburgh, PA",notes:"Existing Tekmetric customer — Pittsburgh address."},
+  {shop:"All Automotive Pittsburgh - Forbes Ave",city:"Murrysville, PA",notes:"Existing Tekmetric customer — listed under Murrysville but branded Pittsburgh. East suburbs."},
+  {shop:"Center Star Auto",city:"Pittsburgh, PA",notes:"Existing Tekmetric customer — Pittsburgh address."},
+  {shop:"Ars Automotive",city:"Pittsburgh, PA",notes:"Existing Tekmetric customer — Pittsburgh address."}
+],
+
+"Hyannis / South Shore 3-Day": [
+  // ── Cape Cod ──
+  {shop:"Yanis Foreign Auto Repair",city:"Hyannis, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Right in the Half-day Cape Cod territory."},
+  {shop:"Platinum Auto Service Yarmouth",city:"South Yarmouth, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Cape Cod, Yarmouth area."},
+  {shop:"MLV Motoring",city:"Barnstable, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Barnstable/Hyannis area."},
+  {shop:"T&J Motorworks",city:"Barnstable, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Barnstable/Hyannis area."},
+  {shop:"V-Tech Auto Center",city:"Harwich Port, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Lower Cape Cod."},
+  {shop:"DiagNation",city:"Marstons Mills, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Mid-Cape (Barnstable County)."},
+  {shop:"Neighborhood Automotive",city:"Wellfleet, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Outer Cape Cod."},
+  {shop:"South Shore Autoworks",city:"Bourne, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Upper Cape near Sagamore Bridge."},
+  // ── Plymouth / Kingston / Carver ──
+  {shop:"SSA South Shore",city:"Kingston, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Kingston, near Plymouth Day 2 stops."},
+  {shop:"Black Market Automotive",city:"Carver, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Carver (Plymouth County)."},
+  {shop:"Larkin Motors",city:"Bridgewater, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Bridgewater, Plymouth County."},
+  // ── South Shore (Norwell → Abington → Weymouth corridor) ──
+  {shop:"Bj's Auto Repair",city:"Norwell, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Norwell, right on Day 3 route."},
+  {shop:"Abington Sunoco Auto Service",city:"Abington, MA",address:"907 Bedford St",notes:"Existing Tekmetric customer — Google Sheet confirmed. Removed from prospects; AutoTechIQ certified."},
+  {shop:"JB Auto Care",city:"Weymouth, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Weymouth, end of Day 3 South Shore run."},
+  {shop:"J R J Tire N Service",city:"Weymouth, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Weymouth area."},
+  // ── Braintree / Quincy / Randolph (outer South Shore) ──
+  {shop:"AXP Braintree",city:"Braintree, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Braintree, outer South Shore corridor."},
+  {shop:"Foreign Motorcars",city:"Quincy, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Quincy."},
+  {shop:"AXP North",city:"Randolph, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Randolph."},
+  {shop:"NEW ENGLAND AUTO SERVICES",city:"Randolph, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. Randolph."},
+  {shop:"North Shore Motor Werks",city:"Newburyport, MA",notes:"Existing Tekmetric customer — Google Sheet confirmed. North Shore reference (outside plan area)."}
+],
+
+"New Jersey — Parsippany 10-Day": [
+  // Known from field research (website shows "Powered by Tekmetric")
+  {shop:"Expert Automotive",city:"Parsippany, NJ",address:"20 Ludlow Rd",notes:"Existing Tekmetric customer — website confirmed. Day 1 Parsippany area."},
+  {shop:"Wall Automotive — Rockaway",city:"Rockaway, NJ",address:"10 E Main St",notes:"Existing Tekmetric customer — website confirmed. Day 3 Rockaway area."},
+  {shop:"Wall Automotive — Morris Plains",city:"Morris Plains, NJ",address:"1195 Littleton Rd",notes:"Existing Tekmetric customer — website confirmed. Day 1/2 Morris Plains area."},
+  {shop:"Fine Tune Automotive",city:"Green Village, NJ",address:"255 Green Village Rd",notes:"Existing Tekmetric customer — website confirmed. Day 2 Madison/Chatham corridor."}
+  // Additional NJ customers loaded dynamically from Google Sheet
+],
+
+"Portsmouth NH / Southern Maine 4-Day": [
+  // ── Seacoast NH (Day 1 area) ──
+  {shop:"Keegan Auto",city:"North Hampton, NH",address:"180 Lafayette Rd",notes:"Existing Tekmetric customer — Google Sheet confirmed. Hampton/Portsmouth NH area. Right on Rte 1 near Day 1 stops."},
+  {shop:"Kensington Autoworks",city:"Kensington, NH",notes:"Existing Tekmetric customer — Google Sheet confirmed. Near Exeter (Day 1). Multiple contacts: Kensington + Exeter addresses."},
+  {shop:"Custom Car Care Salem",city:"Salem, NH",address:"465 North Main St",notes:"Existing Tekmetric customer — Google Sheet confirmed. Salem NH, near the southern NH/Day 1 corridor."},
+  {shop:"Silver Arrow Service",city:"Hudson, NH",address:"8 Rebel Rd",notes:"Existing Tekmetric customer — Google Sheet confirmed. Hudson NH (also Londonderry contact). Southern NH regional proof point."},
+  {shop:"Express Oil",city:"Exeter, NH",notes:"Existing Tekmetric customer — Google Sheet confirmed. Exeter NH — right in Day 1 territory near Graham Tire."},
+  {shop:"Martin's Mobile Auto Repair",city:"Rollinsford, NH",notes:"Existing Tekmetric customer — Google Sheet confirmed. Rollinsford NH, near Dover (Day 1 last stretch)."},
+  // ── Southern Maine (Days 2–3 area) ──
+  {shop:"Arundel Motor Sales",city:"Arundel, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Day 2 Arundel corridor near Bruce's Auto."},
+  {shop:"Pleasant Street Garage",city:"Eliot, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Eliot ME, near South Berwick (Day 2 first stop corridor)."},
+  {shop:"ASP Performance",city:"Sanford, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Sanford ME — same Day 2 inland area as Chandler's Automotive."},
+  {shop:"Uptown Auto Sales & Service",city:"Limerick, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Limerick ME, near Sanford Day 2 corridor."},
+  {shop:"Maine Luxury Auto Barn",city:"Biddeford, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Biddeford — same Day 2 territory as Byron's and Neil's Motors."},
+  {shop:"Maine Auto Hall Scarborough",city:"Scarborough, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Scarborough — Day 3 Village Center corridor."},
+  {shop:"Elyria Tuffy Tire & Auto",city:"Portland, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Portland ME — Day 3 Portland metro stops."},
+  // ── Day 4 inland / Auburn ──
+  {shop:"Center Street Auto Service",city:"Auburn, ME",address:"1100 Center St",notes:"Existing Tekmetric customer — Google Sheet confirmed. Removed from prospects (was Day 4). 5.0★, 335 SureCritic reviews."},
+  {shop:"Jason's Auto Service Hollis",city:"Hollis, ME",address:"661 Cape Rd",notes:"Existing Tekmetric customer — Google Sheet confirmed. Multiple locations: Hollis, Windham, Scarborough, Steep Falls, Standish, Shapleigh. Near Day 4 Gorham/Windham corridor."},
+  // ── Coastal / Northern Maine (reference) ──
+  {shop:"Atlantic Motorcar Center",city:"Wiscasset, ME",address:"10 Oxhorn Rd",notes:"Existing Tekmetric customer — Google Sheet confirmed. North of Portland / Brunswick coastal route."},
+  {shop:"RGI Boothbay",city:"Boothbay, ME",notes:"Existing Tekmetric customer — Google Sheet confirmed. Coastal Maine north of Wiscasset."}
+]
+
+
+,"Mobile AL 10-Day": [
+  // ── Mobile & surrounding territory — existing Tekmetric customers ──
+  {shop:"Bodiford's Automotive Service",city:"Mobile, AL",notes:"Existing Tekmetric customer — AAA Approved · ASE Master Tech Matt Bodiford · 105 Border Cir E."},
+  {shop:"DC Mechanics Auto Repair",city:"Fairhope, AL",notes:"Existing Tekmetric customer — Veteran-owned · Dylan Caudle · 19590 Lawrence Rd · Quality Business Award 2025+2026."},
+  {shop:"Hutchins Auto Repair",city:"Saraland, AL",notes:"Existing Tekmetric customer — 312-B Celeste Rd · full general repair + imports + fleet."},
+  {shop:"Ronnie Lee's Automotive",city:"Daphne, AL",notes:"Existing Tekmetric customer — 8392-A County Rd 64 · European specialist · 158 CARFAX reviews."},
+  {shop:"Milton's Honda Shop",city:"Theodore, AL",notes:"Existing Tekmetric customer — 5689 Hwy 90 W · Honda/Acura specialist since 1994."},
+  {shop:"Gulf Shores Service Center",city:"Gulf Shores, AL",notes:"Existing Tekmetric customer — multiple contacts · ~45 min south (outside 30-min radius)."},
+  {shop:"C & A Mobile Tire & Auto",city:"Mobile, AL",notes:"Existing Tekmetric customer."},
+  {shop:"Streamline Automotives",city:"Mobile, AL",notes:"Existing Tekmetric customer."},
+  {shop:"Tuffy - Mobile",city:"Mobile, AL",notes:"Existing Tekmetric customer — Tuffy franchise."},
+  {shop:"Tuffy - Daphne",city:"Daphne, AL",notes:"Existing Tekmetric customer — Tuffy franchise · Eastern Shore."},
+  {shop:"GB Auto / Fausak Tires — Mobile (Government Blvd)",city:"Mobile, AL",notes:"Existing Tekmetric customer — Sun Auto Group · 4205 Government Blvd · FMP Partner."},
+  {shop:"GB Auto / Fausak Tires — Mobile (Schillinger Rd)",city:"Mobile, AL",notes:"Existing Tekmetric customer — Sun Auto Group · 70 Schillinger Rd · FMP Partner."},
+  {shop:"GB Auto / Fausak Tires — Saraland",city:"Saraland, AL",notes:"Existing Tekmetric customer — Sun Auto Group · 1825 Shelton Beach Rd · FMP Partner."},
+  {shop:"GB Auto / Fausak Tires — Daphne",city:"Daphne, AL",notes:"Existing Tekmetric customer — Sun Auto Group · 2516 US Hwy 98 · FMP Partner."},
+  {shop:"GB Auto / Fausak Tires — Foley",city:"Foley, AL",notes:"Existing Tekmetric customer — Sun Auto Group · 1265 Foley Beach Express · FMP Partner."},
+  {shop:"Superior Automotive McIntosh",city:"McIntosh, AL",notes:"Existing Tekmetric customer — north of Mobile on US-43."},
+  {shop:"PTL Auto & Tire",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Adair Tire and Community Auto Repair",city:"AL",notes:"Existing Tekmetric customer."},
+  // ── Alabama — other markets ──
+  {shop:"WE Bring the Mechanic Shop to You",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Zimmerman's Technical Services",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Russ's Auto & Tire Service",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Motorcenter.us",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Holly Pond Tire & Lube",city:"Holly Pond, AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Marks Automotive",city:"AL",notes:"Existing Tekmetric customer — 4 locations (MSO)."},
+  {shop:"Hodges Automotive & Tire",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Rob'e Mans",city:"AL",notes:"Existing Tekmetric customer — 3 locations (MSO)."},
+  {shop:"Absolute Motor Works",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"T&T Repair Services",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"PowerDown Diesel Performance",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"The Mercedes Man",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Icon Auto Works",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Adept Automotive Madison",city:"Madison, AL",notes:"Existing Tekmetric customer — 3 locations (MSO)."},
+  {shop:"Magics Auto Repair",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Community Auto Repair of Cullman",city:"Cullman, AL",notes:"Existing Tekmetric customer."},
+  {shop:"Auto Super Service Center",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Denver's Quality Automotive",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"GarageWorks Auto",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Barsh Auto South",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Meredithauto.com",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Tapco",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Precise Automotive & Performance",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"T-Town BimmerWerks",city:"Tuscaloosa, AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Graves Auto Service - 3492",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"OK Tire Store",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"A & S Transmission & Performance Prattville",city:"Prattville, AL",notes:"Existing Tekmetric customer."},
+  {shop:"Brown Automotive Repair",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Strickland Brothers 10 Minute Oil Change",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Muscle Shoals Diesel Service",city:"Muscle Shoals, AL",notes:"Existing Tekmetric customer — 3 locations (MSO)."},
+  {shop:"Meadows Auto Center",city:"AL",notes:"Existing Tekmetric customer — 6 locations (MSO)."},
+  {shop:"The Shop New Hope Us-431",city:"New Hope, AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Chico's Auto Pros",city:"AL",notes:"Existing Tekmetric customer — 5 locations (MSO)."},
+  {shop:"Gear Grinders Garage",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Tire City & Auto - 002",city:"AL",notes:"Existing Tekmetric customer — 3 locations."},
+  {shop:"Pitts Automotive",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Gray's Tire & Service Center - Loc 6",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Evans Automotive Dothan",city:"Dothan, AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Five Star Automotive Shop 9726",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Elite Auto & Tire",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Strokin Diesel",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Auto-Medics Guntersville",city:"Guntersville, AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Grays Tire Center - Loc 7",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Mannthey Motorworks",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Parrish's Tire & Full Service Center",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Mechanicox Garage",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"TruTorque Diesel Shop 9593",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"ONE Shot Tire & Automotive",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Apex Vehicle Services",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Guthries Automotive Service Shop 9901",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Grissom Motors",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"D & D Auto Wetumpka",city:"Wetumpka, AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"KB Motor Works",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Alabaster Automotive",city:"Alabaster, AL",notes:"Existing Tekmetric customer."},
+  {shop:"Patriot Automotive & Fleet Specialist",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"ToyoMasters",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"T&E Transmission",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Franklin Automotive Birmingham",city:"Birmingham, AL",notes:"Existing Tekmetric customer — 2 Birmingham locations. Different shop from Mobile's Franklin Automotive (575 Snow Rd S)."},
+  {shop:"Professional Auto Repair",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Riviera Tire",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"ALL American Diesel - Ts - Shop Hackers",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"L&M Tire Center",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Bama Direct Automotive",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Tuffy Pelham",city:"Pelham, AL",notes:"Existing Tekmetric customer — Tuffy franchise."},
+  {shop:"Randy's Collision Center",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"AA Transmission",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Allstar Auto Care",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Iron City Tire & Auto",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"GEI Auto Save - M",city:"AL",notes:"Existing Tekmetric customer — 2 contacts."},
+  {shop:"GEI Decatur",city:"Decatur, AL",notes:"Existing Tekmetric customer."},
+  {shop:"GEI Auto Save - P",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"J & D Auto/Tire Service",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Dale County Diesel",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Duffy's Garage",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Jones Tire & Auto",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"AU CARS",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Mackin's Garage",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Ace Automotive Services",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Babb's Auto & Tire",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Small Town Mechanical",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"D & M AUTOMOTIVE",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Smith Automotives",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"University Tire and Auto",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Happy Jack's Tire Service",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"We Service Autos",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Sellers Wrecker & Repair",city:"AL",notes:"Existing Tekmetric customer — 2 locations."},
+  {shop:"Brian's Tire and Service",city:"AL",notes:"Existing Tekmetric customer."},
+  {shop:"Outlaw Offroad - HVL",city:"AL",notes:"Existing Tekmetric customer."},
+  // ── Out-of-territory (other states) ──
+  {shop:"Byrd's Automotive Pascagoula",city:"Pascagoula, MS",notes:"Existing Tekmetric customer — Mississippi Gulf Coast."},
+  {shop:"Southern Dixie Auto Repair",city:"MS/AL",notes:"Existing Tekmetric customer."},
+  {shop:"Rohling Diesel",city:"MS/AL",notes:"Existing Tekmetric customer."},
+  {shop:"Jerry Damson Nissan",city:"AL",notes:"Existing Tekmetric customer — dealership."},
+  {shop:"Advantage Automotive Ocala",city:"Ocala, FL",notes:"Existing Tekmetric customer — Florida."},
+  {shop:"Wheat Ridge Muffler & Brake",city:"Wheat Ridge, CO",notes:"Existing Tekmetric customer — Colorado."},
+  {shop:"Dakota Ridge Auto",city:"CO",notes:"Existing Tekmetric customer — Colorado · 2 locations."},
+  {shop:"Autoworks Colorado",city:"CO",notes:"Existing Tekmetric customer — Colorado."},
+  {shop:"Ron's Automotive Leeds",city:"Leeds, AL",notes:"Existing Tekmetric customer."},
+  {shop:"Private Label",city:"AL",notes:"Existing Tekmetric customer."}
+]
+};
+
+// ─────────────────────────────────────────────────────────────
+// PLAN ORIGINS — downtown start point per plan
+// ─────────────────────────────────────────────────────────────
+const PLAN_ORIGINS = {
+  "Pittsburgh 1.5-Day":              "Downtown Pittsburgh, PA",
+  "Hyannis / South Shore 3-Day":     "Hyannis, MA",
+  "Portsmouth NH / Southern Maine 4-Day": "Downtown Portsmouth, NH",
+  "New Jersey — Parsippany 10-Day":  "Parsippany, NJ",
+  "Mobile AL 10-Day":                "Downtown Mobile, AL"
+};
+
+function buildMapsURL(origin, shops) {
+  const addrs = [origin, ...shops.map(s => s.address)];
+  return 'https://www.google.com/maps/dir/' + addrs.map(a => encodeURIComponent(a)).join('/');
+}
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let statusMap = {}, notesMap = {}, currentPlan = [], currentView = 'prospects';
+try { statusMap = JSON.parse(localStorage.getItem('fp_status') || '{}'); } catch(e){}
+try { notesMap  = JSON.parse(localStorage.getItem('fp_notes')  || '{}'); } catch(e){}
+
+function saveStatus(){ try{ localStorage.setItem('fp_status', JSON.stringify(statusMap)); }catch(e){} }
+function saveNotes() { try{ localStorage.setItem('fp_notes',  JSON.stringify(notesMap));  }catch(e){} }
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+const planNames = Object.keys(PLANS);
+const planSel = document.getElementById('planSel');
+planSel.innerHTML = planNames.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+planSel.addEventListener('change', () => { currentView = 'prospects'; switchView('prospects'); loadPlan(planSel.value); });
+loadPlan(planNames[0]);
+
+['searchInput','dayFilter','statusFilter','sigFilter'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', render);
+  el.addEventListener('change', render);
+});
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('tabProspects').classList.toggle('active', view === 'prospects');
+  document.getElementById('tabNoVisit').classList.toggle('active', view === 'novisit');
+  document.getElementById('prospectFilters').style.display = view === 'prospects' ? 'flex' : 'none';
+  document.getElementById('statsBar').style.display = view === 'prospects' ? 'flex' : 'none';
+  document.getElementById('grid').style.display = view === 'prospects' ? '' : 'none';
+  document.getElementById('nvPanel').style.display = view === 'novisit' ? '' : 'none';
+  if (view === 'novisit') renderNoVisit();
+}
+
+function loadPlan(name) {
+  currentPlan = (PLANS[name] || []).map(p => ({
+    ...p,
+    status: statusMap[p.id] || 'new',
+    userNotes: notesMap[p.id] || ''
+  }));
+  // Rebuild day filter from this plan's actual days
+  const days = [...new Set(currentPlan.map(p => p.day))].sort((a,b)=>{
+    const order = ['Half-day','Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7','Day 8','Day 9','Day 10'];
+    return order.indexOf(a) - order.indexOf(b);
+  });
+  const df = document.getElementById('dayFilter');
+  df.innerHTML = '<option value="all">All days</option>' + days.map(d=>`<option value="${d}">${d}</option>`).join('');
+  const nvList = NO_VISIT[name] || [];
+  document.getElementById('nvCount').textContent = nvList.length || '0';
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER — PROSPECTS
+// ─────────────────────────────────────────────────────────────
+function render() {
+  const q      = document.getElementById('searchInput').value.toLowerCase();
+  const day    = document.getElementById('dayFilter').value;
+  const status = document.getElementById('statusFilter').value;
+  const sig    = document.getElementById('sigFilter').value;
+
+  const list = currentPlan.filter(p => {
+    if (day    !== 'all' && p.day    !== day)    return false;
+    if (status !== 'all' && p.status !== status) return false;
+    if (sig    !== 'all' && !(p.tags||[]).includes(sig)) return false;
+    if (q && !(p.shop+p.address+p.notes+'').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  if (!list.length) {
+    document.getElementById('grid').innerHTML = '<div class="empty">No shops match your filters.</div>';
+  } else {
+    const dayOrder = ['Half-day','Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7','Day 8','Day 9','Day 10'];
+    const grouped = {};
+    list.forEach(p => { (grouped[p.day] = grouped[p.day]||[]).push(p); });
+    const orderedDays = Object.keys(grouped).sort((a,b) => dayOrder.indexOf(a) - dayOrder.indexOf(b));
+    const origin = PLAN_ORIGINS[planSel.value] || '';
+    document.getElementById('grid').innerHTML = orderedDays.map(d => {
+      const shops = grouped[d];
+      const mapsUrl = buildMapsURL(origin, shops);
+      const mapsBtn = origin ? `<a class="route-btn" href="${mapsUrl}" target="_blank" rel="noopener">📍 Open Route in Maps</a>` : '';
+      return `<div class="day-header"><span class="day-label">${esc(d)}</span><span class="day-count">${shops.length} stop${shops.length!==1?'s':''}</span>${mapsBtn}</div>${shops.map(cardHTML).join('')}`;
+    }).join('');
+  }
+
+  document.querySelectorAll('.status-sel').forEach(el =>
+    el.addEventListener('change', e => onStatus(e.target)));
+  document.querySelectorAll('.notes-btn').forEach(el =>
+    el.addEventListener('click', e => toggleNotes(e.currentTarget.dataset.id)));
+  document.querySelectorAll('.notes-area').forEach(el =>
+    el.addEventListener('blur', e => onNote(e.target)));
+
+  updateStats();
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER — NO-VISIT
+// ─────────────────────────────────────────────────────────────
+function renderNVCards(list, header, grid) {
+  if (!list.length) {
+    header.textContent = '';
+    grid.innerHTML = '<div class="nv-empty">No existing Tekmetric customers identified in this area.</div>';
+    return;
+  }
+  header.innerHTML = `<b>${list.length} existing Tekmetric customer${list.length!==1?'s':''}</b> near this route — use these as proof points when prospects ask "who else is using it nearby?"`;
+  grid.innerHTML = list.map(nv => `
+<div class="nv-card">
+  <span class="nv-badge nv-confirmed">✓ Tekmetric Customer</span>
+  <div class="nv-name">${esc(nv.shop)}</div>
+  ${nv.address ? `<div class="nv-city">📍 ${esc(nv.address)}, ${esc(nv.city)}</div>` : `<div class="nv-city">📍 ${esc(nv.city)}</div>`}
+  ${nv.notes ? `<div class="nv-note">${esc(nv.notes)}</div>` : ''}
+</div>`).join('');
+}
+
+function renderNoVisit() {
+  const name = planSel.value;
+  const header = document.getElementById('nvHeader');
+  const grid = document.getElementById('nvGrid');
+  const hardcoded = NO_VISIT[name] || [];
+
+  // For NJ plan: dynamic fetch from Google Sheet, merge with hardcoded
+  if (name.includes('New Jersey') || name.includes('Parsippany')) {
+    header.innerHTML = 'Loading existing customers from database…';
+    grid.innerHTML = '<div class="nv-empty">Fetching…</div>';
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/1a_mX62jYjrWNBNjLzrK_SlvdL4VMnQ3cMAfli96LWs0/gviz/tq?tqx=out:csv&sheet=report1780072999302&tq=select%20*%20where%20H%3D'NJ'";
+    fetch(sheetUrl).then(r=>r.text()).then(csv=>{
+      const lines = csv.trim().split('\n').slice(1);
+      const parsed = lines.map(line=>{
+        const cols = [];
+        let cur='', inQ=false;
+        for(const ch of line+','){
+          if(ch==='"'){inQ=!inQ;}
+          else if(ch===','&&!inQ){cols.push(cur.trim());cur='';}
+          else cur+=ch;
+        }
+        // col 0=name, col 5=city(?), col 7=state
+        const shop = cols[0]||'';
+        const city = (cols[5]||cols[4]||'').replace(/^"|"$/g,'') + ', NJ';
+        return shop ? {shop, city, notes:'Existing Tekmetric customer — Google Sheet confirmed'} : null;
+      }).filter(Boolean);
+      // Merge, dedup by shop name
+      const seen = new Set(hardcoded.map(x=>x.shop.toLowerCase()));
+      const merged = [...hardcoded, ...parsed.filter(x=>!seen.has(x.shop.toLowerCase()))];
+      document.getElementById('nvCount').textContent = merged.length || '0';
+      renderNVCards(merged, header, grid);
+    }).catch(()=>{
+      document.getElementById('nvCount').textContent = hardcoded.length || '0';
+      renderNVCards(hardcoded, header, grid);
+    });
+    return;
+  }
+
+  renderNVCards(hardcoded, header, grid);
+}
+
+function cardHTML(p) {
+  const tags = p.tags || [];
+  const score = mitchellScore(p);
+  const dayCl = {'Half-day':'dh','Day 1':'d1','Day 2':'d2','Day 3':'d3','Day 4':'d4','Day 5':'d5','Day 6':'d6','Day 7':'d7','Day 8':'d8','Day 9':'d9','Day 10':'d10'}[p.day]||'d1';
+  const stCl  = {visited:'sv',followup:'sf',won:'sw','not-interested':'sn'}[p.status]||'';
+
+  const tagsHtml = [
+    tags.includes('Mitchell')   ? `<span class="tag tm">Mitchell★</span>`  : '',
+    tags.includes('AutoTechIQ') ? `<span class="tag ta">AutoTechIQ</span>` : '',
+    tags.includes('Technet')    ? `<span class="tag tp" style="padding:2px 5px;display:inline-flex;align-items:center;gap:3px"><img src="${TN_LOGO}" height="11" style="vertical-align:middle;display:block"></span>` : '',
+    tags.includes('BG')         ? `<span class="tag tb" style="padding:2px 5px;display:inline-flex;align-items:center;gap:3px"><img src="${BG_LOGO}" height="11" style="vertical-align:middle;display:block"></span>` : '',
+    tags.includes('Fisher')     ? `<span class="tag tf" style="padding:2px 5px;display:inline-flex;align-items:center;gap:3px"><img src="${FISHER_LOGO}" height="13" style="vertical-align:middle;display:block;border-radius:2px"></span>` : '',
+    tags.includes('FMP')        ? `<span class="tag tfp" style="padding:2px 5px;display:inline-flex;align-items:center;gap:3px"><img src="${FMP_LOGO}" height="13" style="vertical-align:middle;display:block;border-radius:2px"></span>` : '',
+    tags.includes('Euro')       ? `<span class="tag te">🇪🇺 Euro</span>` : '',
+    tags.includes('MSO')        ? `<span class="tag tM">MSO</span>`        : '',
+    tags.includes('Marquee')    ? `<span class="tag tq">★ MARQUEE</span>`  : '',
+    tags.includes('Caveat')     ? `<span class="tag tc">⚠ Verify</span>`   : '',
+    tags.includes('Assoc')      ? `<span class="tag tac">🔧 Assoc</span>`    : '',
+    p.stars ? `<span class="tag ts">★${p.stars}${p.reviewInfo?' · '+p.reviewInfo:''}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const dots = [1,2,3,4,5].map(i =>
+    `<div class="dot${i<=score?(score>=4?' hi':' on'):''}"></div>`).join('');
+  const sigLbl = score>=4?'High Mitchell signal':score>=2?'Moderate signal':'Low signal';
+
+  const shopQ  = encodeURIComponent(p.shop + ' ' + (p.address||'').split(',').slice(-2).join(','));
+  const nameQ  = encodeURIComponent(p.shop);
+  const domainGuess = p.shop.toLowerCase().replace(/[''`]/g,'').replace(/[^a-z0-9 ]/g,' ').trim()
+    .split(/\s+/).filter(w=>!['auto','automotive','service','services','tire','tires','and','the','of',
+      'repair','center','shop','car','truck','llc','inc','co','&','brothers','brother'].includes(w))
+    .slice(0,2).join('') + '.com';
+
+  const hasNotes = !!p.userNotes;
+
+  return `
+<div class="card ${stCl}" id="card-${p.id}">
+  <div class="card-top">
+    <div class="shop-name">${esc(p.shop)}</div>
+    <span class="day-badge ${dayCl}">${p.day}</span>
+  </div>
+  ${p.address?`<div class="addr">📍 ${esc(p.address)}</div>`:''}
+  ${p.phone?`<a class="phone" href="tel:${p.phone.replace(/\D/g,'')}">${esc(p.phone)}</a>`:'<div style="margin-bottom:7px;font-size:11px;color:var(--muted)">📞 Call ahead to confirm phone</div>'}
+  <div class="tags">${tagsHtml}</div>
+  ${p.notes?`<div class="sig-notes">${esc(p.notes)}</div>`:''}
+  <div class="sig-row"><div class="dots">${dots}</div><span class="sig-lbl">${sigLbl}</span></div>
+  <div class="verify">
+    ${tags.includes('BG') ? `<a class="vbtn tb" href="https://bgprod.com/find-a-shop/" target="_blank" style="gap:4px"><img src="${BG_LOGO}" height="13" style="vertical-align:middle;display:block"> BG ✓</a>` : ''}
+    ${tags.includes('Technet') ? `<a class="vbtn tp" href="https://www.technetprofessional.com/locator" target="_blank" style="gap:4px"><img src="${TN_LOGO}" height="11" style="vertical-align:middle;display:block"> TechNet ✓</a>` : ''}
+    ${tags.includes('Fisher') ? `<a class="vbtn tf" href="https://www.federatedcc.com/locations.html" target="_blank" style="gap:4px"><img src="${FISHER_LOGO}" height="13" style="vertical-align:middle;display:block;border-radius:2px"> Fisher ✓</a>` : ''}
+    ${tags.includes('FMP') ? `<a class="vbtn tfp" href="https://fmppartnersnetwork.com/shop-locator/" target="_blank" style="gap:4px"><img src="${FMP_LOGO}" height="13" style="vertical-align:middle;display:block;border-radius:2px"> FMP ✓</a>` : ''}
+    ${tags.includes('RepairPal') ? `<a class="vbtn trp" href="https://repairpal.com/auto-repair-near-me" target="_blank" style="gap:4px"><img src="${RP_LOGO}" height="12" style="vertical-align:middle;display:block;border-radius:2px"> RepairPal ✓</a>` : ''}
+    ${tags.includes('CARFAX') ? `<a class="vbtn tcfx" href="https://www.carfax.com/Auto-Repair" target="_blank" style="gap:4px"><img src="${CFX_LOGO}" height="11" style="vertical-align:middle;display:block;border-radius:2px"> CARFAX ✓</a>` : ''}
+    ${tags.includes('Assoc') ? `<a class="vbtn tac" href="https://www.autocare.org/government-relations/become-an-advocate/state-associations" target="_blank">🔧 Assoc ✓</a>` : ''}
+    <a class="vbtn" href="https://www.google.com/search?q=${shopQ}" target="_blank">🌐 Google</a>
+    <a class="vbtn" href="https://www.google.com/search?q=site%3Asurecriticreports.com+${nameQ}" target="_blank">⭐ SureCritic</a>
+    <a class="vbtn" href="https://www.google.com/search?q=site%3Aautotechiq.com+${nameQ}" target="_blank">🔧 AutoTechIQ</a>
+    <a class="vbtn gd-btn" href="https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=${encodeURIComponent(domainGuess)}" target="_blank">🌍 ${domainGuess}</a>
+  </div>
+  <div class="actions">
+    <select class="status-sel" data-id="${p.id}">
+      <option value="new"            ${p.status==='new'           ?'selected':''}>🔵 New</option>
+      <option value="visited"        ${p.status==='visited'       ?'selected':''}>✅ Visited</option>
+      <option value="followup"       ${p.status==='followup'      ?'selected':''}>🔔 Follow-up</option>
+      <option value="not-interested" ${p.status==='not-interested'?'selected':''}>❌ Not interested</option>
+      <option value="won"            ${p.status==='won'           ?'selected':''}>🏆 Won</option>
+      <option value="skip"           ${p.status==='skip'          ?'selected':''}>⬜ Skip</option>
+    </select>
+    <button class="notes-btn ${hasNotes?'has':''}" data-id="${p.id}" title="Notes">📝</button>
+  </div>
+  ${hasNotes?`<div class="notes-preview" onclick="toggleNotes('${p.id}')">📌 ${esc(p.userNotes)}</div>`:''}
+  <textarea class="notes-area" data-id="${p.id}" placeholder="Field notes…">${esc(p.userNotes)}</textarea>
+</div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+function mitchellScore(p) {
+  const t = p.tags||[];
+  let s = 0;
+  if(t.includes('Mitchell'))   s+=2;
+  if(t.includes('AutoTechIQ')) s+=2;
+  if(t.includes('Technet'))    s+=1;
+  if(t.includes('BG'))         s+=1;
+  if(p.stars && parseFloat(p.stars)>=4.5) s+=1;
+  return Math.min(s,5);
+}
+
+function onStatus(sel) {
+  const id = sel.dataset.id;
+  statusMap[id] = sel.value;
+  saveStatus();
+  const p = currentPlan.find(x=>x.id===id);
+  if(p) p.status = sel.value;
+  const card = document.getElementById('card-'+id);
+  if(card){
+    ['sv','sf','sw','sn'].forEach(c=>card.classList.remove(c));
+    const cl={visited:'sv',followup:'sf',won:'sw','not-interested':'sn'}[sel.value];
+    if(cl) card.classList.add(cl);
+  }
+  updateStats();
+}
+
+function toggleNotes(id) {
+  const card = document.getElementById('card-'+id);
+  const ta = card&&card.querySelector('.notes-area');
+  if(!ta) return;
+  const open = ta.style.display==='block';
+  ta.style.display = open?'none':'block';
+  if(!open) ta.focus();
+}
+
+function onNote(ta) {
+  const id = ta.dataset.id, notes = ta.value.trim();
+  notesMap[id] = notes;
+  saveNotes();
+  const p = currentPlan.find(x=>x.id===id);
+  if(p) p.userNotes = notes;
+  const card = document.getElementById('card-'+id);
+  if(!card) return;
+  const btn = card.querySelector('.notes-btn');
+  if(btn) btn.classList.toggle('has', !!notes);
+  let prev = card.querySelector('.notes-preview');
+  if(notes){
+    if(!prev){ prev=document.createElement('div'); prev.className='notes-preview'; prev.onclick=()=>toggleNotes(id); ta.before(prev); }
+    prev.textContent = '📌 '+notes;
+  } else if(prev) prev.remove();
+}
+
+function updateStats() {
+  document.getElementById('sTotal').textContent    = currentPlan.length;
+  document.getElementById('sVisited').textContent  = currentPlan.filter(p=>p.status==='visited').length;
+  document.getElementById('sFollowup').textContent = currentPlan.filter(p=>p.status==='followup').length;
+  document.getElementById('sWon').textContent      = currentPlan.filter(p=>p.status==='won').length;
+  document.getElementById('sMitchell').textContent = currentPlan.filter(p=>mitchellScore(p)>=3).length;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
