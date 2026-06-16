@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Field Prospecting</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --bg: #f8fafc; --surface: #fff; --border: #e2e8f0; --border-light: #f1f5f9;
@@ -58,6 +60,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid transparent; border-radius: 10px; padding: 13px; }
 .card.sv { border-left-color: #818cf8; } .card.sf { border-left-color: var(--orange); }
 .card.sw { border-left-color: var(--green); } .card.sn { border-left-color: #f87171; }
+.card.sd { border-left-color: #0ea5e9; }
+#syncStatus { font-size: 11px; white-space: nowrap; color: var(--muted); flex-shrink: 0; }
+.sync-btn { font-size: 11px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
 .card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
 .shop-name { font-size: 14px; font-weight: 700; line-height: 1.3; flex: 1; }
@@ -147,6 +152,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="hdr-top">
     <div class="logo">⚡ Field Prospecting</div>
     <select class="plan-sel" id="planSel"></select>
+    <span id="syncStatus" style="font-size:11px;color:var(--muted);flex-shrink:0">⟳</span>
+    <button class="sync-btn" onclick="showSyncKey()" title="Share sync link to other devices">🔗</button>
   </div>
   <div class="filters" id="prospectFilters">
     <input class="search" id="searchInput" type="search" placeholder="Search…">
@@ -870,14 +877,121 @@ function buildMapsURL(origin, shops) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// FIREBASE SYNC
+// ─────────────────────────────────────────────────────────────
+const urlSync = new URLSearchParams(location.search).get('sync');
+const SYNC_KEY = (() => {
+  if (urlSync) { localStorage.setItem('fp_sync_key', urlSync); return urlSync; }
+  const k = localStorage.getItem('fp_sync_key') || crypto.randomUUID();
+  localStorage.setItem('fp_sync_key', k);
+  return k;
+})();
+
+firebase.initializeApp({
+  apiKey: "AIzaSyB5y8wut70Ww18SOQkV4FYP-zCnnQ5489Q",
+  authDomain: "tekmetric-prospecting.firebaseapp.com",
+  projectId: "tekmetric-prospecting",
+  storageBucket: "tekmetric-prospecting.firebasestorage.app",
+  messagingSenderId: "979981153270",
+  appId: "1:979981153270:web:5c62e6416a13d72402cdd7"
+});
+const db = firebase.firestore();
+const shopsCol = () => db.collection('sessions').doc(SYNC_KEY).collection('shops');
+
+function setSyncStatus(s) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = s === 'saved' ? '✓ Synced' : s === 'saving' ? '⟳ Saving…' : '⚠ Offline';
+  el.style.color  = s === 'saved' ? 'var(--green)' : s === 'saving' ? 'var(--muted)' : 'var(--orange)';
+}
+
+function showSyncKey() {
+  const link = location.origin + location.pathname + '?sync=' + SYNC_KEY;
+  if (navigator.share) {
+    navigator.share({ title: 'Field Prospecting Sync', url: link });
+  } else {
+    navigator.clipboard.writeText(link).then(() =>
+      alert('✅ Sync link copied!\n\nOpen this URL on your phone or iPad to share notes & status:\n\n' + link)
+    ).catch(() => prompt('Copy this sync link and open it on your other device:', link));
+  }
+}
+
+function loadFromFirebase() {
+  setSyncStatus('saving');
+  shopsCol().get().then(snap => {
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.status) statusMap[doc.id] = d.status;
+      if (d.notes)  notesMap[doc.id]  = d.notes;
+    });
+    try{ localStorage.setItem('fp_status', JSON.stringify(statusMap)); }catch(e){}
+    try{ localStorage.setItem('fp_notes',  JSON.stringify(notesMap));  }catch(e){}
+    setSyncStatus('saved');
+    loadPlan(planSel.value);
+  }).catch(() => setSyncStatus('offline'));
+}
+
+function startRealtimeSync() {
+  shopsCol().onSnapshot(snap => {
+    snap.docChanges().forEach(change => {
+      if (change.type === 'added' || change.type === 'modified') {
+        const d = change.doc.data(), id = change.doc.id;
+        const newStatus = d.status || 'new';
+        const newNotes  = d.notes  || '';
+        const changed = statusMap[id] !== newStatus || (notesMap[id]||'') !== newNotes;
+        statusMap[id] = newStatus;
+        notesMap[id]  = newNotes;
+        if (changed) {
+          const card = document.getElementById('card-'+id);
+          if (card) {
+            const sel = card.querySelector('.status-sel');
+            if (sel && sel.value !== newStatus) { sel.value = newStatus; onStatus(sel, true); }
+            const ta = card.querySelector('.notes-area');
+            if (ta && ta !== document.activeElement && ta.value !== newNotes) {
+              ta.value = newNotes;
+              const p = currentPlan.find(x=>x.id===id);
+              if (p) p.userNotes = newNotes;
+              const btn = card.querySelector('.notes-btn');
+              if (btn) btn.classList.toggle('has', !!newNotes);
+              let prev = card.querySelector('.notes-preview');
+              if (newNotes) {
+                if (!prev) { prev = document.createElement('div'); prev.className='notes-preview'; prev.onclick=()=>toggleNotes(id); ta.before(prev); }
+                prev.textContent = '📌 ' + newNotes;
+              } else if (prev) prev.remove();
+            }
+          }
+        }
+      }
+    });
+    setSyncStatus('saved');
+    try{ localStorage.setItem('fp_status', JSON.stringify(statusMap)); }catch(e){}
+    try{ localStorage.setItem('fp_notes',  JSON.stringify(notesMap));  }catch(e){}
+  }, () => setSyncStatus('offline'));
+}
+
+// ─────────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────────
 let statusMap = {}, notesMap = {}, currentPlan = [], currentView = 'prospects';
 try { statusMap = JSON.parse(localStorage.getItem('fp_status') || '{}'); } catch(e){}
 try { notesMap  = JSON.parse(localStorage.getItem('fp_notes')  || '{}'); } catch(e){}
 
-function saveStatus(){ try{ localStorage.setItem('fp_status', JSON.stringify(statusMap)); }catch(e){} }
-function saveNotes() { try{ localStorage.setItem('fp_notes',  JSON.stringify(notesMap));  }catch(e){} }
+const noteTimers = {};
+function saveStatus(id) {
+  setSyncStatus('saving');
+  shopsCol().doc(id).set({ status: statusMap[id]||'new', notes: notesMap[id]||'', updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true})
+    .then(()=>setSyncStatus('saved')).catch(()=>setSyncStatus('offline'));
+  try{ localStorage.setItem('fp_status', JSON.stringify(statusMap)); }catch(e){}
+}
+function saveNotes(id) {
+  clearTimeout(noteTimers[id]);
+  noteTimers[id] = setTimeout(() => {
+    setSyncStatus('saving');
+    shopsCol().doc(id).set({ status: statusMap[id]||'new', notes: notesMap[id]||'', updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true})
+      .then(()=>setSyncStatus('saved')).catch(()=>setSyncStatus('offline'));
+    try{ localStorage.setItem('fp_notes', JSON.stringify(notesMap)); }catch(e){}
+  }, 800);
+}
 
 // ─────────────────────────────────────────────────────────────
 // INIT
@@ -887,6 +1001,8 @@ const planSel = document.getElementById('planSel');
 planSel.innerHTML = planNames.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
 planSel.addEventListener('change', () => { currentView = 'prospects'; switchView('prospects'); loadPlan(planSel.value); });
 loadPlan(planNames[0]);
+loadFromFirebase();
+startRealtimeSync();
 
 ['searchInput','dayFilter','statusFilter','sigFilter'].forEach(id => {
   const el = document.getElementById(id);
@@ -1030,7 +1146,7 @@ function cardHTML(p) {
   const tags = p.tags || [];
   const score = mitchellScore(p);
   const dayCl = {'Half-day':'dh','Day 1':'d1','Day 2':'d2','Day 3':'d3','Day 4':'d4','Day 5':'d5','Day 6':'d6','Day 7':'d7','Day 8':'d8','Day 9':'d9','Day 10':'d10'}[p.day]||'d1';
-  const stCl  = {visited:'sv',followup:'sf',won:'sw','not-interested':'sn'}[p.status]||'';
+  const stCl  = {visited:'sv',followup:'sf',won:'sw','not-interested':'sn','demo-booked':'sd'}[p.status]||'';
 
   const tagsHtml = [
     tags.includes('Mitchell')   ? `<span class="tag tm">Mitchell★</span>`  : '',
@@ -1088,6 +1204,7 @@ function cardHTML(p) {
     <select class="status-sel" data-id="${p.id}">
       <option value="new"            ${p.status==='new'           ?'selected':''}>🔵 New</option>
       <option value="visited"        ${p.status==='visited'       ?'selected':''}>✅ Visited</option>
+      <option value="demo-booked"    ${p.status==='demo-booked'   ?'selected':''}>📅 Demo booked</option>
       <option value="followup"       ${p.status==='followup'      ?'selected':''}>🔔 Follow-up</option>
       <option value="not-interested" ${p.status==='not-interested'?'selected':''}>❌ Not interested</option>
       <option value="won"            ${p.status==='won'           ?'selected':''}>🏆 Won</option>
@@ -1114,19 +1231,19 @@ function mitchellScore(p) {
   return Math.min(s,5);
 }
 
-function onStatus(sel) {
+function onStatus(sel, silent) {
   const id = sel.dataset.id;
   statusMap[id] = sel.value;
-  saveStatus();
+  if (!silent) saveStatus(id);
   const p = currentPlan.find(x=>x.id===id);
   if(p) p.status = sel.value;
   const card = document.getElementById('card-'+id);
   if(card){
-    ['sv','sf','sw','sn'].forEach(c=>card.classList.remove(c));
-    const cl={visited:'sv',followup:'sf',won:'sw','not-interested':'sn'}[sel.value];
+    ['sv','sf','sw','sn','sd'].forEach(c=>card.classList.remove(c));
+    const cl={visited:'sv',followup:'sf',won:'sw','not-interested':'sn','demo-booked':'sd'}[sel.value];
     if(cl) card.classList.add(cl);
   }
-  updateStats();
+  if (!silent) updateStats();
 }
 
 function toggleNotes(id) {
@@ -1141,7 +1258,7 @@ function toggleNotes(id) {
 function onNote(ta) {
   const id = ta.dataset.id, notes = ta.value.trim();
   notesMap[id] = notes;
-  saveNotes();
+  saveNotes(id);
   const p = currentPlan.find(x=>x.id===id);
   if(p) p.userNotes = notes;
   const card = document.getElementById('card-'+id);
