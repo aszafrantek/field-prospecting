@@ -215,6 +215,16 @@ const RP_LOGO  = 'https://repairpal.com/apple-touch-icon.png';
 const CFX_LOGO = 'https://www.carfax.com/img/carfax-logo.svg';
 
 // ─────────────────────────────────────────────────────────────
+// TEAM CONFIG — fork this repo, then edit only these two lines
+// MY_PLANS: null = show all plans; or restrict to an array of
+//   plan names, e.g. ["Portland ME 3-Day", "Portsmouth / Seacoast NH 2-Day"]
+// MY_SYNC_PREFIX: set to your name so your visit notes are
+//   stored separately from others, e.g. "sarah-"  (leave "" for owner)
+// ─────────────────────────────────────────────────────────────
+const MY_PLANS = null;
+const MY_SYNC_PREFIX = "";
+
+// ─────────────────────────────────────────────────────────────
 // PLAN DATA — prospect shops
 // ─────────────────────────────────────────────────────────────
 const PLANS = {
@@ -1166,6 +1176,17 @@ const PLAN_ORIGINS = {
   "Greater Greensboro NC 6-Day":          "Downtown Greensboro, NC"
 };
 
+// Apply plan filter if configured
+if (MY_PLANS && Array.isArray(MY_PLANS) && MY_PLANS.length > 0) {
+  for (const key of Object.keys(PLANS)) {
+    if (!MY_PLANS.includes(key)) {
+      delete PLANS[key];
+      if (NO_VISIT[key]) delete NO_VISIT[key];
+      if (PLAN_ORIGINS[key]) delete PLAN_ORIGINS[key];
+    }
+  }
+}
+
 function buildMapsURL(origin, shops) {
   const addrs = [origin, ...shops.map(s => s.address)];
   return 'https://www.google.com/maps/dir/' + addrs.map(a => encodeURIComponent(a)).join('/');
@@ -1176,8 +1197,10 @@ function buildMapsURL(origin, shops) {
 // ─────────────────────────────────────────────────────────────
 const urlSync = new URLSearchParams(location.search).get('sync');
 const SYNC_KEY = (() => {
+  const prefix = (typeof MY_SYNC_PREFIX === 'string' && MY_SYNC_PREFIX) ? MY_SYNC_PREFIX : '';
   if (urlSync) { localStorage.setItem('fp_sync_key', urlSync); return urlSync; }
-  const k = localStorage.getItem('fp_sync_key') || crypto.randomUUID();
+  const stored = localStorage.getItem('fp_sync_key');
+  const k = (stored && stored.startsWith(prefix)) ? stored : (prefix + crypto.randomUUID());
   localStorage.setItem('fp_sync_key', k);
   return k;
 })();
