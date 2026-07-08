@@ -144,6 +144,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .empty { padding: 40px 20px; text-align: center; color: var(--muted); font-size: 13px; grid-column: 1/-1; }
 
 @media (max-width: 500px) { .grid { grid-template-columns: 1fr; padding: 8px; gap: 8px; } .search { width: 120px; } .nv-grid { grid-template-columns: 1fr; padding: 8px; } }
+/* ── Settings Modal ── */
+.settings-btn { font-size: 16px; padding: 4px 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; flex-shrink: 0; line-height: 1; }
+.settings-btn:hover { background: var(--border-light); }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; align-items: flex-start; justify-content: center; padding-top: 48px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 14px; padding: 20px; width: 90%; max-width: 460px; max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.18); }
+.modal h2 { font-size: 16px; font-weight: 800; margin-bottom: 16px; color: var(--text); }
+.modal label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+.modal input[type=text] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--bg); color: var(--text); margin-bottom: 14px; }
+.modal input[type=text]:focus { outline: none; border-color: var(--blue); }
+.modal .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; margin-top: 4px; }
+.modal .plan-checks { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.modal .plan-check { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: background .1s; }
+.modal .plan-check:hover { background: var(--border-light); }
+.modal .plan-check input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--blue); flex-shrink: 0; cursor: pointer; }
+.modal .plan-check span { font-size: 13px; font-weight: 500; }
+.modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.modal .btn-save { padding: 8px 20px; background: var(--blue); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.modal .btn-save:hover { background: #1d4ed8; }
+.modal .btn-cancel { padding: 8px 16px; background: var(--border-light); color: var(--text); border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.modal .btn-cancel:hover { background: var(--border); }
+.modal .btn-all { font-size: 11px; color: var(--blue); cursor: pointer; text-decoration: underline; margin-bottom: 8px; display: inline-block; }
+.rep-display { font-size: 11px; color: var(--muted); flex-shrink: 0; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+
 </style>
 </head>
 <body>
@@ -154,6 +178,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <select class="plan-sel" id="planSel"></select>
     <span id="syncStatus" style="font-size:11px;color:var(--muted);flex-shrink:0">⟳</span>
     <button class="sync-btn" onclick="showSyncKey()" title="Share sync link to other devices">🔗</button>
+    <button class="settings-btn" onclick="openSettings()" title="Territory settings">⚙</button>
   </div>
   <div class="filters" id="prospectFilters">
     <input class="search" id="searchInput" type="search" placeholder="Search…">
@@ -184,6 +209,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <option value="CARFAX">CARFAX</option>
           <option value="Assoc">Assoc Member</option>
     </select>
+  </div>
+</div>
+
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="modal">
+    <h2>⚙ My Settings</h2>
+    <label for="repNameInput">Your name (keeps your notes separate from teammates)</label>
+    <input type="text" id="repNameInput" placeholder="e.g. Sarah, Mike, Northeast Team…" maxlength="40">
+    <div class="section-label">My Territories</div>
+    <span class="btn-all" onclick="toggleAllPlans(true)">Select all</span> &nbsp;
+    <span class="btn-all" onclick="toggleAllPlans(false)">Deselect all</span>
+    <div class="plan-checks" id="planChecks"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="btn-save" onclick="saveSettings()">Save &amp; Apply</button>
+    </div>
   </div>
 </div>
 
@@ -1817,6 +1860,111 @@ function updateStats() {
 }
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+
+// ─────────────────────────────────────────────────────────────
+// SETTINGS — rep name + territory filter stored in localStorage
+// ─────────────────────────────────────────────────────────────
+const ALL_PLAN_KEYS = Object.keys(PLANS);
+
+function getSettings() {
+  try {
+    const s = localStorage.getItem('fp_settings');
+    return s ? JSON.parse(s) : { repName: '', myPlans: null };
+  } catch(e) { return { repName: '', myPlans: null }; }
+}
+
+function applySettings(settings) {
+  // Filter planSel dropdown
+  const sel = document.getElementById('planSel');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '';
+  const visiblePlans = (!settings.myPlans || settings.myPlans.length === 0)
+    ? ALL_PLAN_KEYS
+    : ALL_PLAN_KEYS.filter(k => settings.myPlans.includes(k));
+  visiblePlans.forEach(k => {
+    const o = document.createElement('option');
+    o.value = k; o.textContent = k;
+    sel.appendChild(o);
+  });
+  // Restore selection if still visible, else pick first
+  if (visiblePlans.includes(current)) sel.value = current;
+  else if (visiblePlans.length) sel.value = visiblePlans[0];
+  // Re-render
+  loadPlan(sel.value);
+}
+
+function openSettings() {
+  const settings = getSettings();
+  document.getElementById('repNameInput').value = settings.repName || '';
+  const checks = document.getElementById('planChecks');
+  checks.innerHTML = '';
+  ALL_PLAN_KEYS.forEach(k => {
+    const checked = !settings.myPlans || settings.myPlans.includes(k);
+    checks.innerHTML += `<label class="plan-check">
+      <input type="checkbox" value="${k}" ${checked ? 'checked' : ''}>
+      <span>${k}</span>
+    </label>`;
+  });
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function toggleAllPlans(checked) {
+  document.querySelectorAll('#planChecks input[type=checkbox]').forEach(cb => cb.checked = checked);
+}
+
+function saveSettings() {
+  const repName = document.getElementById('repNameInput').value.trim();
+  const checked = [...document.querySelectorAll('#planChecks input[type=checkbox]:checked')].map(cb => cb.value);
+  const myPlans = checked.length === ALL_PLAN_KEYS.length ? null : checked;
+  const settings = { repName, myPlans };
+  try { localStorage.setItem('fp_settings', JSON.stringify(settings)); } catch(e) {}
+
+  // Update rep name display & SYNC_KEY prefix hint
+  updateRepDisplay(repName);
+
+  closeSettings();
+  applySettings(settings);
+}
+
+function updateRepDisplay(name) {
+  // Show name next to sync icon if set
+  const existing = document.getElementById('repDisplay');
+  if (existing) existing.remove();
+  if (name) {
+    const span = document.createElement('span');
+    span.id = 'repDisplay';
+    span.className = 'rep-display';
+    span.title = 'Signed in as: ' + name;
+    span.textContent = '👤 ' + name;
+    document.querySelector('.hdr-top').insertBefore(span, document.getElementById('syncStatus'));
+  }
+}
+
+// Init settings on load
+(function initSettings() {
+  const settings = getSettings();
+  if (settings.repName) updateRepDisplay(settings.repName);
+  // Apply plan filter after planSel is populated
+  const origPopulate = window._populatePlanSel;
+  // Hook into plan selector population
+  const observer = new MutationObserver(() => {
+    const sel = document.getElementById('planSel');
+    if (sel && sel.options.length > 0) {
+      observer.disconnect();
+      if (settings.myPlans && settings.myPlans.length > 0) {
+        applySettings(settings);
+      }
+    }
+  });
+  observer.observe(document.getElementById('planSel'), { childList: true });
+})();
+
 </script>
 </body>
 </html>
