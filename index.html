@@ -190,7 +190,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <option value="new">New</option>
       <option value="visited">Visited</option>
       <option value="followup">Follow-up</option>
-      <option value="won">Won</option>
+      <option value="won">Demo Booked</option>
       <option value="not-interested">Not interested</option>
       <option value="skip">Skip</option>
     </select>
@@ -239,7 +239,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="stat"><b id="sTotal">–</b>&nbsp;stops</div>
   <div class="stat"><b class="bl" id="sVisited">–</b>&nbsp;visited</div>
   <div class="stat"><b class="or" id="sFollowup">–</b>&nbsp;follow-up</div>
-  <div class="stat"><b class="gr" id="sWon">–</b>&nbsp;won</div>
+  <div class="stat"><b class="gr" id="sWon">–</b>&nbsp;demo booked</div>
   <div class="stat"><b class="gd" id="sMitchell">–</b>&nbsp;Mitchell signals</div>
 </div>
 
@@ -1785,7 +1785,7 @@ function cardHTML(p) {
       <option value="demo-booked"    ${p.status==='demo-booked'   ?'selected':''}>📅 Demo booked</option>
       <option value="followup"       ${p.status==='followup'      ?'selected':''}>🔔 Follow-up</option>
       <option value="not-interested" ${p.status==='not-interested'?'selected':''}>❌ Not interested</option>
-      <option value="won"            ${p.status==='won'           ?'selected':''}>🏆 Won</option>
+      <option value="won"            ${p.status==='won'           ?'selected':''}>📅 Demo Booked</option>
       <option value="skip"           ${p.status==='skip'          ?'selected':''}>⬜ Skip</option>
     </select>
     <button class="notes-btn ${hasNotes?'has':''}" data-id="${p.id}" title="Notes">📝</button>
@@ -3441,7 +3441,7 @@ function cardHTML(p) {
       <option value="demo-booked"    ${p.status==='demo-booked'   ?'selected':''}>📅 Demo booked</option>
       <option value="followup"       ${p.status==='followup'      ?'selected':''}>🔔 Follow-up</option>
       <option value="not-interested" ${p.status==='not-interested'?'selected':''}>❌ Not interested</option>
-      <option value="won"            ${p.status==='won'           ?'selected':''}>🏆 Won</option>
+      <option value="won"            ${p.status==='won'           ?'selected':''}>📅 Demo Booked</option>
       <option value="skip"           ${p.status==='skip'          ?'selected':''}>⬜ Skip</option>
     </select>
     <button class="notes-btn ${hasNotes?'has':''}" data-id="${p.id}" title="Notes">📝</button>
