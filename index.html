@@ -1502,6 +1502,13 @@ function loadFromFirebase() {
       if (d.status) statusMap[doc.id] = d.status;
       if (d.notes)  notesMap[doc.id]  = d.notes;
     });
+    // Seed defaultStatus into Firebase for any shop not yet at that status
+    Object.values(PLANS).flat().forEach(p => {
+      if (p.defaultStatus && statusMap[p.id] !== p.defaultStatus) {
+        statusMap[p.id] = p.defaultStatus;
+        shopsCol().doc(p.id).set({ status: p.defaultStatus, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true});
+      }
+    });
     try{ localStorage.setItem('fp_status', JSON.stringify(statusMap)); }catch(e){}
     try{ localStorage.setItem('fp_notes',  JSON.stringify(notesMap));  }catch(e){}
     setSyncStatus('saved');
@@ -3158,6 +3165,13 @@ function loadFromFirebase() {
       const d = doc.data();
       if (d.status) statusMap[doc.id] = d.status;
       if (d.notes)  notesMap[doc.id]  = d.notes;
+    });
+    // Seed defaultStatus into Firebase for any shop not yet at that status
+    Object.values(PLANS).flat().forEach(p => {
+      if (p.defaultStatus && statusMap[p.id] !== p.defaultStatus) {
+        statusMap[p.id] = p.defaultStatus;
+        shopsCol().doc(p.id).set({ status: p.defaultStatus, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, {merge:true});
+      }
     });
     try{ localStorage.setItem('fp_status', JSON.stringify(statusMap)); }catch(e){}
     try{ localStorage.setItem('fp_notes',  JSON.stringify(notesMap));  }catch(e){}
