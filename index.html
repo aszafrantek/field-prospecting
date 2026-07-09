@@ -1852,7 +1852,8 @@ function onNote(ta) {
 
 function updateStats() {
   document.getElementById('sTotal').textContent    = currentPlan.length;
-  document.getElementById('sVisited').textContent  = currentPlan.filter(p=>p.status==='visited').length;
+  const VISITED_STATUSES = ['visited','followup','won','not-interested'];
+  document.getElementById('sVisited').textContent  = currentPlan.filter(p=>VISITED_STATUSES.includes(p.status)).length;
   document.getElementById('sFollowup').textContent = currentPlan.filter(p=>p.status==='followup').length;
   document.getElementById('sWon').textContent      = currentPlan.filter(p=>p.status==='won').length;
   document.getElementById('sMitchell').textContent = currentPlan.filter(p=>mitchellScore(p)>=3).length;
@@ -3508,7 +3509,8 @@ function onNote(ta) {
 
 function updateStats() {
   document.getElementById('sTotal').textContent    = currentPlan.length;
-  document.getElementById('sVisited').textContent  = currentPlan.filter(p=>p.status==='visited').length;
+  const VISITED_STATUSES = ['visited','followup','won','not-interested'];
+  document.getElementById('sVisited').textContent  = currentPlan.filter(p=>VISITED_STATUSES.includes(p.status)).length;
   document.getElementById('sFollowup').textContent = currentPlan.filter(p=>p.status==='followup').length;
   document.getElementById('sWon').textContent      = currentPlan.filter(p=>p.status==='won').length;
   document.getElementById('sMitchell').textContent = currentPlan.filter(p=>mitchellScore(p)>=3).length;
