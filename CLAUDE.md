@@ -1,6 +1,6 @@
 # Field Prospecting Tool — Claude Context
 
-This repo is a single-file iPad-ready prospecting tool for Tekmetric field sales reps. It lives at **https://aszafrantek.github.io/field-prospecting/** and is deployed via GitHub Pages from `index.html`.
+This repo is a single-file iPad-ready prospecting tool for Tekmetric field sales reps. It deploys via GitHub Pages from `index.html` and is accessible at **https://[YOUR_GITHUB_USERNAME].github.io/field-prospecting/**.
 
 Claude should read this file at the start of every session and follow all conventions exactly. Do not invent new formats — match what is already in the file.
 
@@ -8,52 +8,61 @@ Claude should read this file at the start of every session and follow all conven
 
 ## New Rep Quickstart
 
-If you're a new rep setting up your own territory, here is the complete process:
+This repo is a **GitHub template**. Every rep gets their own copy — their own URL, their own plans, their own data.
 
-### Step 1 — Start your Claude session with this prompt
+### Step 1 — Create your repo from the template
 
-Paste the following into a fresh Claude (Cowork) session:
+1. Go to **https://github.com/aszafrantek/field-prospecting**
+2. Click **"Use this template"** → **"Create a new repository"**
+3. Set repository name to `field-prospecting`
+4. Set visibility to **Public** (required for free GitHub Pages)
+5. Click **"Create repository"**
+
+### Step 2 — Enable GitHub Pages
+
+1. In your new repo, go to **Settings → Pages**
+2. Under "Source", select **Deploy from a branch**
+3. Branch: `main` / folder: `/ (root)` → Save
+4. Your app will be live at `https://[your-github-username].github.io/field-prospecting/` within ~60 seconds
+
+### Step 3 — Open a Claude (Cowork) session and paste this prompt
 
 ```
 You are helping me set up a field prospecting tool for Tekmetric auto repair sales.
 
-Fetch the current tool from GitHub:
-  https://raw.githubusercontent.com/aszafrantek/field-prospecting/main/index.html
+My GitHub username is: [YOUR_GITHUB_USERNAME]
 
-Save it locally as index.html. Then read the CLAUDE.md at:
-  https://raw.githubusercontent.com/aszafrantek/field-prospecting/main/CLAUDE.md
+Fetch my copy of the tool:
+  https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/field-prospecting/main/index.html
 
-Follow all conventions in CLAUDE.md exactly. My territory is: [YOUR CITY/REGION HERE].
-Build me a [N]-day plan and deploy it to GitHub.
+Save it as index.html. Then read CLAUDE.md at:
+  https://raw.githubusercontent.com/[YOUR_GITHUB_USERNAME]/field-prospecting/main/CLAUDE.md
+
+First, clear out all existing plans from PLANS, NO_VISIT, and PLAN_ORIGINS — they belong
+to a different rep. Set all three to empty objects: PLANS = {}; NO_VISIT = {}; PLAN_ORIGINS = {};
+
+Then build me a plan for my territory: [YOUR CITY/REGION, N days].
+Deploy to: https://github.com/[YOUR_GITHUB_USERNAME]/field-prospecting/upload/main
 ```
 
-### Step 2 — Open the app
+### Step 4 — Open the app on your iPad
 
-Go to **https://aszafrantek.github.io/field-prospecting/** on your iPad or phone.
-
-Tap ⚙ (settings, top right) and set:
+Go to your GitHub Pages URL. Tap ⚙ (settings, top right) and set:
 - **Your name / sync prefix** — e.g. `evan-` — this namespaces your visit notes in Firebase so they don't mix with other reps
 - **My plans** — optionally restrict to just your plan names
 
 Your status and notes sync across your own devices via the 🔗 share button. They are not visible to other reps.
 
-### Step 3 — Add your territory
+### Step 5 — Field workflow
 
-Tell Claude the city, region, and number of days you want. Claude will:
-1. Research 8–12 independent auto repair shops per day
-2. Check TechNet and BG affiliations
-3. Add the plan to the file and deploy to GitHub Pages
-
-### Step 4 — Field workflow
-
-At the end of each day, tell Claude: **"Log today's Granola notes"**. Claude will pull your meeting notes from Granola, match them to shops in your plan, and update the notes field for each visited shop. Then it deploys.
+At the end of each day, tell Claude: **"Log today's Granola notes"**. Claude will pull your meeting notes from Granola, match them to shops in your plan, and update the notes for each visited shop, then redeploy.
 
 ---
 
 ## Architecture
 
-- **One file**: everything lives in `index.html` — HTML, CSS, and JS in a single file (~527 KB)
-- **GitHub Pages**: deploys automatically from `main` branch via `.github/workflows/pages.yml`
+- **One file**: everything lives in `index.html` — HTML, CSS, and JS in a single file (~300–550 KB)
+- **GitHub Pages**: deploys automatically from `main` branch
 - **Firebase Firestore**: stores each rep's visit notes and shop statuses, project `tekmetric-prospecting`
 - **No build step**: plain HTML/JS, validated with `node --check` before every deploy
 
@@ -61,13 +70,13 @@ At the end of each day, tell Claude: **"Log today's Granola notes"**. Claude wil
 
 ## Deploying Changes
 
-Never use git CLI — the sandbox has no GitHub credentials. Always deploy by:
+Never use git CLI — always deploy via Chrome:
 
-1. Validate JS first: extract `<script>` tag contents → write to `/tmp/validate.js` → run `node --check /tmp/validate.js`
-2. Navigate Chrome to `https://github.com/aszafrantek/field-prospecting/upload/main`
+1. Validate JS first: extract `<script>` tag → write to `/tmp/validate.js` → run `node --check /tmp/validate.js`
+2. Navigate Chrome to `https://github.com/[USERNAME]/field-prospecting/upload/main`
 3. Read the page with `read_page` to get fresh element refs
 4. Upload `index.html` via the file input ref
-5. Scroll down, click the commit message field, type a short message
+5. Click the commit message field, type a short message
 6. Click "Commit changes"
 7. GitHub Pages redeploys in ~60 seconds
 
@@ -82,28 +91,30 @@ All prospect data lives inside the `<script>` tag in three JS objects: `PLANS`, 
 ```javascript
 const PLANS = {
   "Plan Name Here": [
-    {id:"unique-slug",shop:"Shop Name",day:"Day 1",address:"123 Main St, City ST 00000",phone:"(xxx) xxx-xxxx",tags:["Technet","BG"],stars:"4.8",reviewInfo:"210 reviews",notes:"Visit notes here"}
+    {id:"unique-slug", shop:"Shop Name", day:"Day 1", address:"123 Main St, City ST 00000",
+     phone:"(xxx) xxx-xxxx", tags:["Technet","BG"], stars:"4.8", reviewInfo:"210 reviews",
+     notes:"Visit notes here"}
   ]
 };
 ```
 
 **Rules:**
 - `id` must be a unique kebab-case slug across the entire file — check for collisions before adding
-- `day` must be exactly `"Day 1"`, `"Day 2"`, etc. — no other format
+- `day` must be exactly `"Day 1"`, `"Day 2"`, etc.
 - `tags` is an array — see Tags section below for all valid values
 - `stars` is a string (e.g. `"4.8"`) or `null`
-- `reviewInfo` is a string or `null`
-- `notes` is a string — use `·` (middle dot) as separator within notes
+- `notes` is a string — use `·` (middle dot U+00B7) as separator within notes
 - No trailing commas after the last shop in a plan array
 - After removing a shop, check for double-commas `,,` and fix them
-- For confirmed demo-booked shops, add `defaultStatus:"won"` to the entry so the tally reflects it on load
+- For confirmed demo-booked shops, add `defaultStatus:"won"` to the entry
 
 ### NO_VISIT — existing Tekmetric customers
 
 ```javascript
 const NO_VISIT = {
   "Plan Name Here": [
-    {shop:"Shop Name",city:"City, ST",address:"123 Main St",notes:"Existing Tekmetric customer — reason here"}
+    {shop:"Shop Name", city:"City, ST", address:"123 Main St",
+     notes:"Existing Tekmetric customer — reason here"}
   ]
 };
 ```
@@ -154,66 +165,61 @@ Wrong casing breaks the visual badge rendering. Use these exact strings:
 
 ## Status Values
 
-Internal status values stored in Firebase:
-
 | Value | Display |
 |-------|---------|
 | `"new"` | Not yet visited |
 | `"visited"` | Visited, no follow-up yet |
 | `"followup"` | Follow-up needed |
-| `"won"` | **Demo Booked** (displayed as "📅 Demo Booked") |
+| `"won"` | 📅 Demo Booked |
 | `"not-interested"` | Declined |
 | `"skip"` | Skip this stop |
 
-The top stat bar counts:
+Stat bar counts:
 - **Visited** = visited + follow-up + demo booked + not-interested (any physical stop)
-- **Follow-up** = followup only
 - **Demo Booked** = won only
-
-To hardcode a shop as Demo Booked (e.g. confirmed before deployment), add `defaultStatus:"won"` to its entry. On load, the app seeds this into Firebase for any device.
 
 ---
 
 ## Adding a New Territory
 
 ### Step 1: Research
-Use web search to find 8–12 independent auto repair shops per day. No national chains (no Midas, Meineke, Pep Boys, Firestone, Jiffy Lube, Mavis, NTB, Valvoline). For each shop collect:
+Find 8–12 independent auto repair shops per day. No national chains (no Midas, Meineke, Pep Boys, Firestone, Jiffy Lube, Mavis, NTB, Valvoline). For each shop collect:
 - Full street address with ZIP
 - Phone number
 - Google star rating + review count
 - Any affiliations (Mitchell1/SureCritic, AutoTechIQ, TechNet, BG, NAPA, AAA, etc.)
-- Brief notes (specialty, ownership history, notable signals)
+- Brief notes (specialty, ownership, notable signals)
+
+Target profile: 4+ stars, independent, owner-operated, 2–15 bays, general repair or specialty.
 
 ### Step 2: Check TechNet
-Search `https://www.technetprofessional.com/find-shop` by ZIP code for each day's area. Tag any matches with `"Technet"`. Add TechNet shops not already in the plan as new entries.
+Search `https://www.technetprofessional.com/find-shop` by ZIP for each day's area. Tag matches with `"Technet"`. Add any TechNet shops not already in the plan.
 
 ### Step 3: Check BG Products
 Search `https://www.bgprod.com/find-a-shop/` by ZIP. Tag matches with `"BG"`.
 
-### Step 4: Plan structure
-Organize shops into days based on geography (cluster stops within the same corridor). Name the plan descriptively, e.g. `"National Harbor MD 6-Day"`. Add to:
-1. `PLANS` — shop entries with correct day labels
-2. `NO_VISIT` — empty array `[]` initially
-3. `PLAN_ORIGINS` — the TopGolf/hotel anchor city
+### Step 4: Check AutoTechIQ
+Search `https://www.autotechiq.com/find-a-shop`. Tag matches with `"AutoTechIQ"`.
 
-### Step 5: Validate and deploy
-Run `node --check` on the extracted script. Fix any syntax errors. Deploy via GitHub upload.
-
----
-
-## Day Structure Conventions
-
-- Day 1 = closest to the anchor (TopGolf or hotel)
+### Step 5: Plan structure
+- Name the plan: `"[City/Region] [N]-Day"` — e.g. `"Columbus OH 5-Day"`
+- Day 1 = closest to anchor hotel/TopGolf
 - Subsequent days radiate outward geographically
-- Add a comment before each day's shops: `// ── Day N — Area Description ──`
-- Field visit notes from real trips go at the end of the plan array with the note format: `"VISITED M/D/YY — [observations]. [CRM system]. [contact / email]. [next step]."`
-- Demo booked format appended to notes: `"DEMO BOOKED: [date/time] · [format]"`
+- Add to `PLANS`, `NO_VISIT` (empty array `[]`), and `PLAN_ORIGINS`
+- Add day comments: `// ── Day N — Area Description ──`
+
+### Step 6: Cross-reference existing customers
+Before finalizing, cross-reference all prospect shops against the existing customers Google Sheet (accessible via the gviz/tq API from an authenticated browser tab). Any confirmed matches:
+1. Remove from `PLANS`
+2. Add to `NO_VISIT` with note: `"Existing Tekmetric customer"`
+
+### Step 7: Validate and deploy
 
 ---
 
 ## JS Validation
 
-Always validate before deploying. Extract script and check:
+Always validate before deploying:
 
 ```python
 with open('index.html', 'r') as f:
@@ -226,16 +232,15 @@ with open('/tmp/validate.js', 'w') as f:
 ```
 
 Common errors after edits:
-- Double commas `,,` after removing a shop entry — replace with `,`
-- Missing comma between entries — add `,` before `{shop:`
+- Double commas `,,` after removing a shop — replace with `,`
 - Wrong tag casing — `"TechNet"` should be `"Technet"`
-- Escaped quotes inside notes (`\"`) can break regex — use index-based string slicing for notes edits, not regex
+- Escaped quotes inside notes can break regex — use index-based string slicing
 
 ---
 
 ## Editing Notes Safely
 
-Notes fields can contain escaped quotes (`\"`). Never use regex patterns like `[^"]*?` to match notes — they break on escaped quotes and corrupt the file. Always use index-based slicing:
+Notes fields can contain escaped quotes (`\"`). Always use index-based slicing, never regex:
 
 ```python
 idx_start = html.find('{id:"shop-id"')
@@ -248,44 +253,13 @@ html = html[:notes_start] + new_section + html[entry_end+2:]
 
 ---
 
-## Existing Plans (as of July 2026)
+## Day Structure Conventions
 
-| Plan | Origin | Days |
-|------|--------|------|
-| Cape Cod / Salem NH 3-Day | Hyannis, MA | 3 |
-| Portsmouth / Seacoast NH 2-Day | Downtown Portsmouth, NH | 2 |
-| Portland ME 3-Day | Portland, ME | 3 |
-| New Jersey — Parsippany 10-Day | Parsippany, NJ | 10 |
-| Mobile AL 10-Day | Downtown Mobile, AL | 10 |
-| Winston-Salem 3-Day | Downtown Winston-Salem, NC | 3 |
-| Manchester / Concord NH 3-Day | Manchester, NH | 3 |
-| Nashua / South NH 3-Day | Nashua, NH | 3 |
-| North Shore MA 3-Day | Salem, MA | 3 |
-| Vermont 2-Day | Lebanon, NH | 2 |
-| Rhode Island 2-Day | Providence, RI | 2 |
-| Greater Greensboro NC 6-Day | Downtown Greensboro, NC | 6 |
-| National Harbor MD 6-Day | Oxon Hill, MD | 6 |
-
----
-
-## Team Config (in script, top of file)
-
-```javascript
-const MY_PLANS = null;       // null = show all; or ["Plan Name"] to hardcode filter
-const MY_SYNC_PREFIX = "";   // "" = no prefix; or "evan-" to namespace Firebase notes
-```
-
-These are the hardcoded defaults. Reps can override via the ⚙ settings UI in the app (no code edit needed) — settings are stored in their browser's localStorage.
-
----
-
-## Firebase
-
-- Project: `tekmetric-prospecting`
-- Data path: `sessions/{SYNC_KEY}/shops/{shopId}`
-- `SYNC_KEY` is auto-generated per device (UUID), optionally prefixed with rep name
-- Visit notes and statuses are per-rep — no shared state between reps
-- Reps can sync across their own devices using the 🔗 share button
+- Day 1 = closest to the anchor (TopGolf or hotel)
+- Subsequent days radiate outward geographically
+- Comment before each day: `// ── Day N — Area Description ──`
+- Field visit notes format: `"VISITED M/D/YY — [observations]. [CRM system]. [contact / email]. [next step]."`
+- Demo booked format: `"DEMO BOOKED: [date/time] · [format e.g. Google Meet / in-person]"`
 
 ---
 
@@ -295,29 +269,54 @@ At end of day, say: **"Log today's Granola notes"**
 
 Claude will:
 1. Pull meetings from the Granola MCP for the current day
-2. Filter to shop visits only (skip internal meetings, 1:1s, etc.)
+2. Filter to shop visits only (skip internal meetings, 1:1s)
 3. Match each meeting to a shop by name in `PLANS`
-4. Update the `notes` field for each matched shop using index-based slicing
+4. Update the `notes` field using index-based slicing
 5. Validate JS and deploy
-
-Notes are appended in the format: `"VISITED M/D/YY — [key observations]. [CRM system + tenure]. [contact name / email]. [next step]."`
 
 ---
 
-## Cross-referencing Existing Customers
+## Team Config (in script, top of file)
 
-Before finalizing a new territory, cross-reference all prospect shops against the NEW EXISTING USERS Google Sheet (accessible from an authenticated browser tab using the gviz/tq API). Any confirmed matches:
-1. Remove from `PLANS`
-2. Add to `NO_VISIT` with note: `"Existing Tekmetric customer — [source]"`
-3. Exception: if a shop has a confirmed demo booking date but is NOT in the existing customers list, keep them in `PLANS` (they booked but didn't convert)
+```javascript
+const MY_PLANS = null; // null = show all; or ["Plan Name"] to hardcode filter
+const MY_SYNC_PREFIX = ""; // "" = no prefix; or "evan-" to namespace Firebase notes
+```
+
+Reps can override via the ⚙ settings UI — stored in browser localStorage, no code edit needed.
+
+---
+
+## Firebase
+
+- Project: `tekmetric-prospecting`
+- Data path: `sessions/{SYNC_KEY}/shops/{shopId}`
+- `SYNC_KEY` is auto-generated per device (UUID), optionally prefixed with rep name
+- Visit notes and statuses are per-rep — no shared state between reps
+- Reps sync across their own devices via the 🔗 share button
 
 ---
 
 ## Notes Style Guide
 
-- Use `·` (middle dot U+00B7) to separate note clauses: `"Family-owned since 1978 · ASE certified · M–F 8–5"`
+- Use `·` (middle dot U+00B7) to separate clauses: `"Family-owned since 1978 · ASE certified · M–F 8–5"`
 - Hours format: `M–F 8–5` or `M–Sat 8–4`
 - Field visit notes start with: `"VISITED M/D/YY — "`
-- Demo booked format: `"DEMO BOOKED: [date/time] · [format e.g. Google Meet / in-person]"`
+- Demo booked: append `"DEMO BOOKED: [date/time] · [format]"` to notes + add `defaultStatus:"won"` to entry
 - Marquee shops: add `★★ MARQUEE` at end of notes
 - Caveat shops: add `⚠` at end of notes
+
+---
+
+## Quality Signals (prioritize these)
+
+- **Mitchell1 / SureCritic**: any shop with 50+ reviews is an active Mitchell1 customer
+- **500+ SureCritic reviews**: tag `"Marquee"` — high-value target
+- **TechNet**: already in an industry network — receptive to tools
+- **AutoTechIQ**: tech-forward, growth-oriented
+- **4.8+ Google stars, 100+ reviews**: quality indicator
+- **NAPA AutoCare / AAA Approved**: established, credible shops
+- **Owner-operated, 3–10 bays**: ideal Tekmetric buyer profile
+- **Multi-location (MSO)**: tag `"MSO"` — higher ARR opportunity
+
+Avoid: tire-only shops, transmission-only, body shops, dealers, fleet-only.
