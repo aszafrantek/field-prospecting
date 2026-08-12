@@ -235,6 +235,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 <div class="view-tabs">
   <div class="vtab active" id="tabProspects" onclick="switchView('prospects')">🎯 Prospects</div>
   <div class="vtab" id="tabNoVisit" onclick="switchView('novisit')">✅ Existing Customers <span class="nvcount" id="nvCount">0</span></div>
+  <div class="vtab" id="tabTeam" onclick="switchView('team')">&#x1F465; Team Feed</div>
 </div>
 
 <div class="stats" id="statsBar">
@@ -3092,6 +3093,178 @@ function updateRepDisplay(name) {
 // 
 // deploy trigger
 // v2
-</script>
+
+
+// ── TEAM FEED ──────────────────────────────────────────────────────
+(function(){
+  var _sv = typeof switchView === 'function' ? switchView : function(){};
+  window.switchView = function(v){
+    var tp = document.getElementById('panelTeam');
+    if(v === 'team'){
+      document.querySelectorAll('.vtab').forEach(function(el){ el.classList.remove('active'); });
+      var tt = document.getElementById('tabTeam');
+      if(tt) tt.classList.add('active');
+      var grid = document.getElementById('grid');
+      var sb = document.getElementById('statsBar');
+      var pf = document.getElementById('prospectFilters');
+      if(grid) grid.style.display = 'none';
+      if(sb) sb.style.display = 'none';
+      if(pf) pf.style.display = 'none';
+      if(!tp){
+        tp = document.createElement('div');
+        tp.id = 'panelTeam';
+        tp.style.cssText = 'padding:16px;max-width:820px;margin:0 auto';
+        tp.innerHTML = '<div id="teamFeed"><div style="padding:20px;color:#64748b;text-align:center">Loading…</div></div>';
+        document.body.appendChild(tp);
+      }
+      tp.style.display = 'block';
+      loadTeamFeed();
+      return;
+    }
+    if(tp) tp.style.display = 'none';
+    var grid2 = document.getElementById('grid');
+    var sb2 = document.getElementById('statsBar');
+    var pf2 = document.getElementById('prospectFilters');
+    if(grid2) grid2.style.display = '';
+    if(sb2) sb2.style.display = '';
+    if(pf2) pf2.style.display = '';
+    _sv(v);
+  };
+})();
+
+function buildShopLookup(){
+  var lk = {};
+  Object.entries(PLANS).forEach(function(e){
+    var pn = e[0], shops = e[1];
+    shops.forEach(function(s){ lk[s.id] = {shop: s.shop, plan: pn, day: s.day}; });
+  });
+  return lk;
+}
+
+function loadTeamFeed(){
+  var feedEl = document.getElementById('teamFeed');
+  if(!feedEl) return;
+  feedEl.innerHTML = '<div style="padding:20px;color:#64748b;text-align:center">Loading team activity…</div>';
+  var lk = buildShopLookup();
+  var allIds = Object.keys(lk);
+  var db = firebase.firestore();
+  Promise.all([db.collection('fp_reps').get(), db.collection('fp_status').get()])
+  .then(function(results){
+    var repsSnap = results[0], statusSnap = results[1];
+    var repNames = {};
+    repsSnap.forEach(function(d){ repNames[d.id] = d.data().name; });
+    var acts = [];
+    statusSnap.forEach(function(d){
+      var docId = d.id, data = d.data();
+      if(!data.status || data.status === 'new') return;
+      var matchId = null, prefix = '';
+      for(var i = 0; i < allIds.length; i++){
+        var sid = allIds[i];
+        if(docId === sid){ matchId = sid; prefix = ''; break; }
+        if(docId.length > sid.length && docId.slice(-sid.length) === sid){ matchId = sid; prefix = docId.slice(0, docId.length - sid.length); break; }
+      }
+      if(!matchId) return;
+      var info = lk[matchId];
+      var repLabel = prefix === '' ? 'Me' : (repNames[prefix] || 'Rep ' + prefix.slice(0,6));
+      var ts = data.updatedAt ? data.updatedAt.toDate() : null;
+      acts.push({rep: repLabel, repKey: prefix, shop: info.shop, plan: info.plan, day: info.day, status: data.status, notes: data.notes || '', ts: ts, tsMs: ts ? ts.getTime() : 0});
+    });
+    acts.sort(function(a, b){ return b.tsMs - a.tsMs; });
+    renderTeamFeed(acts, repNames);
+  }).catch(function(e){
+    var feedEl2 = document.getElementById('teamFeed');
+    if(feedEl2) feedEl2.innerHTML = '<div style="padding:20px;color:#dc2626">Error: ' + e.message + '</div>';
+  });
+}
+
+function saveRepName(uuid, name, btn){
+  btn.disabled = true; btn.textContent = '…';
+  firebase.firestore().collection('fp_reps').doc(uuid).set({name: name, updatedAt: firebase.firestore.FieldValue.serverTimestamp()})
+  .then(function(){ btn.textContent = '✓'; setTimeout(loadTeamFeed, 500); });
+}
+
+var _STAT_LABELS = {visited: '✅ Visited', followup: '📞 Follow-up', won: '🎯 Demo Booked', 'not-interested': '🚫 Not interested', skip: '⏭ Skip'};
+
+function filterTeam(btn, rep){
+  document.querySelectorAll('.tf-btn').forEach(function(b){ b.classList.remove('tf-on'); });
+  btn.classList.add('tf-on');
+  document.querySelectorAll('.team-item').forEach(function(el){
+    el.style.display = (!rep || el.dataset.rep === rep) ? '' : 'none';
+  });
+}
+
+function renderTeamFeed(acts, repNames){
+  var feedEl = document.getElementById("teamFeed");
+  if(!feedEl) return;
+  var seen = {}, regRows = "";
+  acts.forEach(function(a){
+    if(a.repKey && !seen[a.repKey]){
+      seen[a.repKey] = true;
+      var saved = (repNames[a.repKey] || "").replace(/"/g,"&quot;");
+      var short = a.repKey.slice(0,8);
+      regRows += "<div style=\"display:flex;align-items:center;gap:8px;margin:4px 0\">"
+        + "<span style=\"font-size:11px;color:#64748b;font-family:monospace\">" + short + "...</span>"
+        + "<input class=\"rep-name-inp\" data-k=\"" + a.repKey + "\" style=\"border:1px solid #cbd5e1;border-radius:4px;padding:3px 8px;font-size:13px;flex:1;min-width:0\" placeholder=\"Enter name\" value=\"" + saved + "\">"
+        + "<button class=\"rep-save-btn\" data-k=\"" + a.repKey + "\" style=\"background:#2563eb;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:12px;cursor:pointer;white-space:nowrap\">Save</button>"
+        + "</div>";
+    }
+  });
+  var regHtml = regRows
+    ? "<div style=\"background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:16px\">"
+      + "<div style=\"font-size:11px;font-weight:700;text-transform:uppercase;color:#64748b;letter-spacing:.05em;margin-bottom:8px\">Name Your Reps</div>"
+      + regRows + "</div>"
+    : "";
+  var reps = acts.map(function(a){ return a.rep; }).filter(function(r,i,arr){ return arr.indexOf(r) === i; });
+  var btnStyle = "border:1px solid #cbd5e1;border-radius:20px;padding:4px 14px;font-size:12px;cursor:pointer;background:#fff;color:#374151";
+  var filterHtml = reps.length > 1
+    ? "<div style=\"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px\">"
+      + "<button class=\"tf-btn tf-on\" data-rep=\"\" style=\"" + btnStyle + "\">All (" + acts.length + ")</button>"
+      + reps.map(function(r){
+          var cnt = acts.filter(function(a){ return a.rep === r; }).length;
+          var sr = r.replace(/"/g,"&quot;");
+          return "<button class=\"tf-btn\" data-rep=\"" + sr + "\" style=\"" + btnStyle + "\">" + sr + " (" + cnt + ")</button>";
+        }).join("") + "</div>"
+    : "";
+  var itemsHtml = acts.length
+    ? acts.map(function(a){
+        var tsStr = a.ts ? a.ts.toLocaleDateString("en-US",{month:"short",day:"numeric"}) + " " + a.ts.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}) : "";
+        var stBadge = _STAT_LABELS[a.status] || a.status;
+        var sr = a.rep.replace(/"/g,"&quot;");
+        return "<div class=\"team-item\" data-rep=\"" + sr + "\" style=\"background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:8px\">"
+          + "<div style=\"display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px\">"
+          + "<b style=\"color:#1e293b\">" + a.rep + "</b>"
+          + "<span style=\"color:#94a3b8\">&rarr;</span>"
+          + "<span style=\"color:#0f172a;font-weight:500\">" + a.shop + "</span>"
+          + "<span style=\"background:#f1f5f9;border-radius:4px;padding:2px 8px;font-size:12px;white-space:nowrap\">" + stBadge + "</span>"
+          + "</div>"
+          + "<div style=\"font-size:12px;color:#64748b\">" + a.plan + " &middot; " + a.day + (tsStr ? " &middot; " + tsStr : "") + "</div>"
+          + (a.notes ? "<div style=\"margin-top:6px;font-size:13px;color:#374151;white-space:pre-line\">" + a.notes + "</div>" : "")
+          + "</div>";
+      }).join("")
+    : "<div style=\"color:#94a3b8;text-align:center;padding:40px\">No field activity recorded yet.</div>";
+  feedEl.innerHTML =
+    "<style>.tf-btn.tf-on{background:#2563eb!important;color:#fff!important;border-color:#2563eb!important}</style>"
+    + "<div style=\"font-size:18px;font-weight:700;color:#0f172a;margin-bottom:16px\">Team Feed</div>"
+    + regHtml + filterHtml + itemsHtml;
+  feedEl.onclick = function(e){
+    var fb = e.target.closest(".tf-btn");
+    if(fb){
+      feedEl.querySelectorAll(".tf-btn").forEach(function(b){ b.classList.remove("tf-on"); });
+      fb.classList.add("tf-on");
+      var rep = fb.getAttribute("data-rep");
+      feedEl.querySelectorAll(".team-item").forEach(function(el){
+        el.style.display = (!rep || el.getAttribute("data-rep") === rep) ? "" : "none";
+      });
+      return;
+    }
+    var sb = e.target.closest(".rep-save-btn");
+    if(sb){
+      var uuid = sb.getAttribute("data-k");
+      var inp = feedEl.querySelector(".rep-name-inp[data-k=\"" + uuid + "\"]");
+      if(inp) saveRepName(uuid, inp.value, sb);
+    }
+  };
+}
+// ── END TEAM FEED ──</script>
 </body>
 </html>
