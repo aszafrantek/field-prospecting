@@ -3017,7 +3017,7 @@ function renderNoVisit() {
 
 function cardHTML(p) {
   const tags = p.tags || [];
-  const score = mitchellScore(p);
+  const score = icpScore(p);
   const dayCl = {'Half-day':'dh','Day 1':'d1','Day 2':'d2','Day 3':'d3','Day 4':'d4','Day 5':'d5','Day 6':'d6','Day 7':'d7','Day 8':'d8','Day 9':'d9','Day 10':'d10'}[p.day]||'d1';
   const stCl  = {visited:'sv',followup:'sf',won:'sw','not-interested':'sn','demo-booked':'sd'}[p.status]||'';
 
@@ -3094,18 +3094,19 @@ function cardHTML(p) {
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
-function mitchellScore(p) {
+function icpScore(p) {
   const t = p.tags||[];
   let s = 0;
   const stars = parseFloat(p.stars)||0;
   const rv = (p.reviewInfo||'').match(/(\d[\d,]*)\s+review/i);
-  const rc = rv ? parseInt(rv[1].replace(/,/g,''),10) : 0;
-  if(stars>=4.5)                                           s++;
-  if(rc>=100)                                              s++;
-  if(t.includes('Mitchell'))                               s++;
-  if(t.includes('Technet'))                                s++;
-  if(t.includes('AutoTechIQ'))                             s++;
+  const rc = rv ? parseInt(rv[1]) : 0;
+  if(stars>=4.5) s++;
+  if(rc>=100) s++;
+  if(t.includes('Mitchell')) s++;
+  if(t.includes('Technet')) s++;
+  if(t.includes('AutoTechIQ')) s++;
   if(t.includes('NAPA')||t.includes('AAA')||t.includes('Marquee')) s++;
+  if(t.includes('Kukui')||t.includes('Steer')||t.includes('RepairShop')||t.includes('AutoshopSolutions')||t.includes('Autovitals')) s+=2;
   return Math.min(s,5);
 }
 
@@ -3156,7 +3157,7 @@ function updateStats() {
   document.getElementById('sVisited').textContent  = currentPlan.filter(p=>VISITED_STATUSES.includes(p.status)).length;
   document.getElementById('sFollowup').textContent = currentPlan.filter(p=>p.status==='followup').length;
   document.getElementById('sWon').textContent      = currentPlan.filter(p=>p.status==='won').length;
-  document.getElementById('sMitchell').textContent = currentPlan.filter(p=>mitchellScore(p)>=3).length;
+  document.getElementById('sMitchell').textContent = currentPlan.filter(p=>icpScore(p)>=3).length;
 }
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
