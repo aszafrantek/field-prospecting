@@ -2157,6 +2157,22 @@ const PLANS = {
     {id:"ct-c-larrys",shop:"Larry's Sales & Repair",day:"Day 3",address:"260 Talcottville Rd, Vernon-Rockville CT 06066",phone:null,tags:["AAA"],stars:null,reviewInfo:null,notes:null},
     {id:"ct-c-belltown-col",shop:"Bell Town Motors",day:"Day 3",address:"636 Lebanon Ave, Colchester CT",phone:"(860) 267-7222",tags:["Technet"],stars:null,reviewInfo:null,notes:null},
     {id:"ct-c-broadway-col",shop:"Broadway Auto Service",day:"Day 3",address:"176 Broadway St, Colchester CT 06415",phone:null,tags:["Goodyear"],stars:null,reviewInfo:null,notes:null}
+  ],
+  "Richmond VA 2-Day": [
+    // ── Day 1 — Midlothian · Hull Street · N. Chesterfield ──
+    {id:"rva-platinum-hull",shop:"Platinum Plus Auto Repair",day:"Day 1",address:"11530 Hull Street Rd, Midlothian VA 23112",phone:"(804) 303-9828",tags:["Technet"],stars:null,reviewInfo:null,notes:null},
+    {id:"rva-craven-auto",shop:"Craven Automotive",day:"Day 1",address:"1300 Walton Bluff Circle, Midlothian VA 23114",phone:null,tags:[],stars:null,reviewInfo:null,notes:null},
+    {id:"rva-penn-tire-midlo",shop:"Pennsylvania Tire & Auto of Midlothian",day:"Day 1",address:"10131 Hull Street Rd, Midlothian VA",phone:"(804) 745-9724",tags:["Technet"],stars:null,reviewInfo:null,notes:"WARM · 11 locations PA/DE/VA · Omnique (hates it) · Dana Cummings + Kim South (acct) · demo set 3/19 · check CRM for status · GROUP OPPORTUNITY"},
+    {id:"rva-ms-tmz",shop:"Ms. TMZ Auto Center",day:"Day 1",address:"911 Branchway Rd, Richmond VA",phone:"(804) 379-3300",tags:["Technet"],stars:null,reviewInfo:null,notes:"WARM · ShopBoss · Bill owner/tech · Dana counter · 4 bays · history most important · strong warranties"},
+    {id:"rva-terrys-complete",shop:"Terry's Complete Auto Repair",day:"Day 1",address:"2512 Wayside Dr, North Chesterfield VA",phone:"(804) 901-2221",tags:["Technet"],stars:null,reviewInfo:null,notes:null},
+    {id:"rva-express-auto",shop:"Express Auto Center",day:"Day 1",address:"9720 Jefferson Davis Hwy, North Chesterfield VA",phone:"(804) 743-7473",tags:["Technet"],stars:null,reviewInfo:null,notes:null},
+    {id:"rva-hancocks",shop:"Hancock's Automotive",day:"Day 1",address:"7501 Iron Bridge Rd, North Chesterfield VA 23237",phone:"(804) 271-5615",tags:["Technet"],stars:null,reviewInfo:null,notes:"WARM · Mitchell · Debbie mgr 8yrs · open to change · also has Hancock's Service Center"},
+    // ── Day 2 — Scott's Addition / Northside · Vidler's 11am · Battlefield 2pm ──
+    {id:"rva-vidlers",shop:"Vidler's Automotive",day:"Day 2",address:"7109 Brook Rd, Richmond VA 23227",phone:null,tags:[],stars:null,reviewInfo:null,notes:"DEMO BOOKED 11am",defaultStatus:"won"},
+    {id:"rva-ironwood",shop:"Ironwood Automotive",day:"Day 2",address:"2104 N Hamilton St, Richmond VA 23230",phone:"(804) 213-1300",tags:["Steer"],stars:"4.9",reviewInfo:"261 reviews",notes:"WARM FOLLOW-UP · Shopmonkey 2.0 issues · Aaron (owner) · parts mgr + SA (prev Tek) all in · team onboarding + sandbox + data migration · return visit set"},
+    {id:"rva-turners",shop:"Turner's Auto Service",day:"Day 2",address:"3308 N Arthur Ashe Blvd, Richmond VA 23230",phone:null,tags:["Technet","ASE"],stars:null,reviewInfo:null,notes:"WARM · David mgr · Protractor · prev Tek user hated the switch · 3 bays · family since 2019"},
+    {id:"rva-centerville-imports",shop:"Centerville Imports Inc",day:"Day 2",address:"12934 Plaza Dr, Henrico VA 23233",phone:"(804) 708-0916",tags:["Technet"],stars:null,reviewInfo:null,notes:"WARM · ShopBoss since 2017 · Tim Gratton owner/tech · Felicia decision maker · interested and intrigued"},
+    {id:"rva-mike-brooks",shop:"Mike Brooks Auto Repair",day:"Day 2",address:"Richmond VA",phone:"(804) 353-2110",tags:[],stars:null,reviewInfo:null,notes:"Cold · verify address before visiting"}
   ]
 };
 
@@ -2807,6 +2823,20 @@ const NO_VISIT = {
     {shop:"Innovative Restorations Inc",city:"Wallingford, CT",address:"",notes:"Existing Tekmetric customer " + dot + " #20470"},
     {shop:"Bloomfield Garage",city:"Bloomfield, CT",address:"689 Park Ave",notes:"Existing Tekmetric customer " + dot + " #11137"},
     {shop:"Heckler Enterprises",city:"Andover, CT",address:"",notes:"Existing Tekmetric customer " + dot + " #9606"}
+  ],
+  "Richmond VA 2-Day": [
+    {shop:"Lyman Automotive Midlothian",city:"Midlothian, VA",address:"3900 Bellson Park Drive",notes:"Existing Tekmetric customer " + dot + " #2572"},
+    {shop:"Ferber's Tire & Auto - Hull St",city:"Midlothian, VA",address:"13937 Hull Street Rd",notes:"Existing Tekmetric customer " + dot + " #18088"},
+    {shop:"Autowerx",city:"Midlothian, VA",address:"10231 Hull Street Rd N",notes:"Existing Tekmetric customer " + dot + " #16827"},
+    {shop:"Titan Auto & Tire - Moseley",city:"Moseley, VA",address:"17211 Hull Street Rd",notes:"Existing Tekmetric customer " + dot + " #6018"},
+    {shop:"Titan Auto & Tire - N. Chesterfield",city:"North Chesterfield, VA",address:"6000 Blest Lane",notes:"Existing Tekmetric customer " + dot + " #6019"},
+    {shop:"Elliott Automotive",city:"Richmond, VA",address:"4101 Glenside Dr",notes:"Existing Tekmetric customer " + dot + " #3717"},
+    {shop:"Murray Automotive",city:"Powhatan, VA",address:"1731 Douthit Ct",notes:"Existing Tekmetric customer " + dot + " #10293"},
+    {shop:"Gayton Automotive Service",city:"Henrico, VA",address:"2580 Gaston Centre Dr",notes:"Existing Tekmetric customer " + dot + " #3964"},
+    {shop:"Euro Ground Automotive",city:"Henrico, VA",address:"3919 Deep Rock Rd",notes:"Existing Tekmetric customer " + dot + " #3076"},
+    {shop:"Church & Pump Auto",city:"Richmond, VA",address:"11902 Church Rd",notes:"Existing Tekmetric customer " + dot + " #2762"},
+    {shop:"Virginia Automotive Service",city:"Richmond / Glen Allen, VA",address:"7805 W Broad St + 11006 W Broad St",notes:"Churned customer " + dot + " Shopware " + dot + " contact Joel@apexautomotive.com (434-435-1212) for owner"},
+    {shop:"Complete Automotive of Richmond",city:"Richmond, VA",address:"Multiple locations",notes:"Existing Tekmetric customer (multiple locations) " + dot + " not interested in changing"}
   ]
 };
 
@@ -2840,7 +2870,8 @@ const PLAN_ORIGINS = {
   "Pittsburgh PA 7-Day": "Cranberry Twp, PA",
   "Connecticut Coastal 3-Day": "Milford, CT",
   "Connecticut Inland 3-Day": "Wallingford, CT",
-  "Connecticut Central 3-Day": "Middletown, CT"
+  "Connecticut Central 3-Day": "Middletown, CT",
+  "Richmond VA 2-Day": "Richmond, VA"
 };
 
 // Apply plan filter if configured
