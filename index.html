@@ -94,6 +94,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .tc { background: var(--orange-bg); color: var(--orange); }
 .ts { background: var(--border-light); color: var(--muted); }
 .tR { background: #ecfdf5; color: #059669; }
+.tpn { background: #7c3aed; color: #ffffff; }
 
 /* Signal dots */
 .sig-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
@@ -121,6 +122,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .vbtn.tcfx { background: #003087; color: #ffffff; border-color: #003087; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
 .tac  { background: #4338ca; color: #ffffff; }
 .vbtn.tac { background: #4338ca; color: #ffffff; border-color: #4338ca; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
+.vbtn.tpn { background: #7c3aed; color: #ffffff; border-color: #7c3aed; opacity: 1; font-weight: 700; font-size: 11px; padding: 4px 8px; }
 
 /* Actions */
 .actions { display: flex; gap: 6px; align-items: center; }
@@ -3290,6 +3292,7 @@ function cardHTML(p) {
     tags.includes('Caveat')     ? `<span class="tag tc">⚠ Verify</span>`   : '',
     tags.includes('Assoc')      ? `<span class="tag tac">🔧 Assoc</span>`    : '',
     tags.includes('RSW')        ? `<span class="tag tR">🌐 RSW</span>`        : '',
+    tags.includes('Pronto')     ? `<span class="tag tpn">Pronto</span>`     : '',
     p.stars ? `<span class="tag ts">★${p.stars}${p.reviewInfo?' · '+p.reviewInfo:''}</span>` : '',
   ].filter(Boolean).join('');
 
@@ -3325,6 +3328,7 @@ function cardHTML(p) {
     ${tags.includes('RepairPal') ? `<a class="vbtn trp" href="https://repairpal.com/auto-repair-near-me" target="_blank" style="gap:4px"><img src="${RP_LOGO}" height="12" style="vertical-align:middle;display:block;border-radius:2px"> RepairPal ✓</a>` : ''}
     ${tags.includes('CARFAX') ? `<a class="vbtn tcfx" href="https://www.carfax.com/Auto-Repair" target="_blank" style="gap:4px"><img src="${CFX_LOGO}" height="11" style="vertical-align:middle;display:block;border-radius:2px"> CARFAX ✓</a>` : ''}
     ${tags.includes('Assoc') ? `<a class="vbtn tac" href="https://www.autocare.org/government-relations/become-an-advocate/state-associations" target="_blank">🔧 Assoc ✓</a>` : ''}
+    ${tags.includes('Pronto') ? `<a class="vbtn tpn" href="https://theprontonetwork.com/Home/LocationFinder" target="_blank">Pronto</a>` : ''}
     <a class="vbtn" href="https://www.google.com/search?q=${shopQ}" target="_blank">🌐 Google</a>
     <a class="vbtn" href="https://www.google.com/search?q=site%3Asurecriticreports.com+${nameQ}" target="_blank">⭐ SureCritic</a>
     <a class="vbtn" href="https://www.google.com/search?q=site%3Aautotechiq.com+${nameQ}" target="_blank">🔧 AutoTechIQ</a>
