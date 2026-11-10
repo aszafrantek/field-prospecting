@@ -64,6 +64,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .card.stm { border-left-color: #0d9488; }
 .tag.stm { background: #0d9488; color: #ffffff; }
 .tm { color: #0d9488; }
+.card.stm { border-left-color: #0d9488; }
+.tag.stm { background: #0d9488; color: #ffffff; }
+.tm { color: #0d9488; }
 #syncStatus { font-size: 11px; white-space: nowrap; color: var(--muted); flex-shrink: 0; }
 .sync-btn { font-size: 11px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
@@ -194,7 +197,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
     <select class="fsel" id="statusFilter">
       <option value="all">All status</option>
       <option value="new">New</option>
-      <option value="visited">Visited</option>
+      <option value="visite
+        <option value="tm-customer">TM Customer</option>d">Visited</option>
       <option value="followup">Follow-up</option>
       <option value="won">Demo Booked</option>
         <option value="tm-customer">TM Customer</option>
@@ -246,7 +250,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 
 <div class="stats" id="statsBar">
   <div class="stat"><b id="sTotal">–</b>&nbsp;stops</div>
-  <div class="stat"><b class="bl" id="sVisited">–</b>&nbsp;visited</div>
+  <div class="stat"><b class="bl" id="sVisited">–  <div class="stat"><b class="tm" id="sTM">–</b>&nbsp;TM customer</div>
+</b>&nbsp;visited</div>
   <div class="stat"><b class="or" id="sFollowup">–</b>&nbsp;follow-up</div>
   <div class="stat"><b class="gr" id="sWon">–</b>&nbsp;demo booked</div>
   <div class="stat"><b class="tm" id="sTM">–</b>&nbsp;TM customer</div>
@@ -3296,7 +3301,7 @@ function renderNoVisit() {
 function cardHTML(p) {
   const tags = p.tags || [];
   const score = icpScore(p);
-  const dayCl = {'Half-day':'dh','Day 1':'d1','Day 2':'d2','Day 3':'d3','Day 4':'d4','Day 5':'d5','Day 6':'d6','Day 7':'d7','Day 8':'d8','Day 9':'d9','Day 10':'d10'}[p.day]||'d1';
+  const da'tm-customer':'stm''dh','Day 1':'d1','Day 2':'d2','Day 3':'d3','Day 4':'d4','Day 5':'d5','Day 6':'d6','Day 7':'d7','Day 8':'d8','Day 9':'d9','Day 10':'d10'}[p.day]||'d1';
   const stCl  = {visited:'sv',followup:'sf',won:'sw','not-interested':'sn','tm-customer':'stm'}[p.status]||'';
 
   const tagsHtml = [
@@ -3324,7 +3329,8 @@ function cardHTML(p) {
   const nameQ  = encodeURIComponent(p.shop);
   const domainGuess = p.shop.toLowerCase().replace(/[''`]/g,'').replace(/[^a-z0-9 ]/g,' ').trim()
     .split(/\s+/).filter(w=>!['auto','automotive','service','services','tire','tires','and','the','of',
-      'repair','center','shop','car','truck','llc','inc','co','&','brothers','brother'].includes(w))
+      'repair','center','shop','car','truck','llc','in
+    ${p.status === 'tm-customer' ? '<span class="tag stm">TM</span>' : ''}c','co','&','brothers','brother'].includes(w))
     .slice(0,2).join('') + '.com';
 
   const hasNotes = !!p.userNotes;
@@ -3353,13 +3359,11 @@ function cardHTML(p) {
     <a class="vbtn" href="https://www.google.com/search?q=${shopQ}" target="_blank">🌐 Google</a>
     <a class="vbtn" href="https://www.google.com/search?q=site%3Asurecriticreports.com+${nameQ}" target="_blank">⭐ SureCritic</a>
     <a class="vbtn" href="https://www.google.com/search?q=site%3Aautotechiq.com+${nameQ}" target="_blank">🔧 AutoTechIQ</a>
-    <a class="vbtn gd-btn" href="https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=${encodeURIComponent(domainGuess)}" target="_blank">🌍 ${domainGuess}</a>
-  </div>
-  <div class="actions">
-    <select class="status-sel" data-id="${p.id}">
+    <a class="vbtn gd-btn" href="https://www.godaddy.com/domainsearch/find?checkAvail=1&domainToCheck=${encodeURIComponent(domainGuess)}ta-id="${p.id}">
       <option value="new"            ${p.status==='new'           ?'selected':''}>🔵 New</option>
       <option value="visited"        ${p.status==='visited'       ?'selected':''}>✅ Visited</option>
-      <option value="followup"       ${p.status==='followup'      ?'selected':''}>🔔 Follow-up</option>
+      <option value="followup"       ${p.status==='followup'      ?'selected':''}>🔔 Follow-up</option
+              <option value="tm-customer" ${p.status==='tm-customer'?'selected':''}>🔧 TM Customer</option>>
       <option value="not-interested" ${p.status==='not-interested'?'selected':''}>❌ Not interested</option>
       <option value="won"            ${p.status==='won'           ?'selected':''}>📅 Demo Booked</option>
               <option value="tm-customer" ${p.status==='tm-customer'?'selected':''}>🔧 TM Customer</option>
@@ -3393,8 +3397,7 @@ function icpScore(p) {
 
 function onStatus(sel, silent) {
   const id = sel.dataset.id;
-  statusMap[id] = sel.value;
-  if (!silent) saveStatus(id);
+  statusMap[id] 'tm-customer':'stm'(!silent) saveStatus(id);
   const p = currentPlan.find(x=>x.id===id);
   if(p) p.status = sel.value;
   const card = document.getElementById('card-'+id);
@@ -3426,15 +3429,15 @@ function onNote(ta) {
   const btn = card.querySelector('.notes-btn');
   if(btn) btn.classList.toggle('has', !!notes);
   let prev = card.querySelector('.notes-preview');
-  if(notes){
-    if(!prev){ prev=document.createElement('div'); prev.className='notes-preview'; prev.onclick=()=>toggleNotes(id); ta.before(prev); }
+  iVISITED_STATUSES = ['visited','followup','won','not-interested','tm-customer']v.className='notes-preview'; prev.onclick=()=>toggleNotes(id); ta.before(prev); }
     prev.textContent = '📌 '+notes;
   } else if(prev) prev.remove();
 }
 
 function updateStats() {
   document.getElementById('sTotal').textContent    = currentPlan.length;
-  const VISITED_STATUSES = ['visited','followup','won','not-interested','tm-customer'];
+  const VISITED_STATUSES = ['visited','followup','won','not-interested','tm-
+      document.getElementById('sTM').textContent      = currentPlan.filter(p=>p.status==='tm-customer').length;customer'];
   document.getElementById('sVisited').textContent  = currentPlan.filter(p=>VISITED_STATUSES.includes(p.status)).length;
   document.getElementById('sFollowup').textContent = currentPlan.filter(p=>p.status==='followup').length;
   document.getElementById('sWon').textContent      = currentPlan.filter(p=>p.status==='won').length;
