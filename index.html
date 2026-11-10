@@ -61,6 +61,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .card.sv { border-left-color: #818cf8; } .card.sf { border-left-color: var(--orange); }
 .card.sw { border-left-color: var(--green); } .card.sn { border-left-color: #f87171; }
 .card.sd { border-left-color: #0ea5e9; }
+.card.stm { border-left-color: #0d9488; }
+.tag.stm { background: #0d9488; color: #ffffff; }
+.tm { color: #0d9488; }
 #syncStatus { font-size: 11px; white-space: nowrap; color: var(--muted); flex-shrink: 0; }
 .sync-btn { font-size: 11px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
@@ -194,6 +197,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <option value="visited">Visited</option>
       <option value="followup">Follow-up</option>
       <option value="won">Demo Booked</option>
+        <option value="tm-customer">TM Customer</option>
       <option value="not-interested">Not interested</option>
       <option value="skip">Skip</option>
     </select>
@@ -245,6 +249,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <div class="stat"><b class="bl" id="sVisited">–</b>&nbsp;visited</div>
   <div class="stat"><b class="or" id="sFollowup">–</b>&nbsp;follow-up</div>
   <div class="stat"><b class="gr" id="sWon">–</b>&nbsp;demo booked</div>
+  <div class="stat"><b class="tm" id="sTM">–</b>&nbsp;TM customer</div>
   <div class="stat"><b class="gd" id="sMitchell">–</b>&nbsp;strong ICP</div>
 </div>
 
@@ -3292,7 +3297,7 @@ function cardHTML(p) {
   const tags = p.tags || [];
   const score = icpScore(p);
   const dayCl = {'Half-day':'dh','Day 1':'d1','Day 2':'d2','Day 3':'d3','Day 4':'d4','Day 5':'d5','Day 6':'d6','Day 7':'d7','Day 8':'d8','Day 9':'d9','Day 10':'d10'}[p.day]||'d1';
-  const stCl  = {visited:'sv',followup:'sf',won:'sw','not-interested':'sn','demo-booked':'sd'}[p.status]||'';
+  const stCl  = {visited:'sv',followup:'sf',won:'sw','not-interested':'sn','tm-customer':'stm'}[p.status]||'';
 
   const tagsHtml = [
     tags.includes('Mitchell')   ? `<span class="tag tm">Mitchell★</span>`  : '',
@@ -3328,6 +3333,7 @@ function cardHTML(p) {
 <div class="card ${stCl}" id="card-${p.id}">
   <div class="card-top">
     <div class="shop-name">${esc(p.shop)}</div>
+    ${p.status === 'tm-customer' ? '<span class="tag stm">TM</span>' : ''}
     <span class="day-badge ${dayCl}">${p.day}</span>
   </div>
   ${p.address?`<div class="addr">📍 ${esc(p.address)}</div>`:''}
@@ -3353,10 +3359,10 @@ function cardHTML(p) {
     <select class="status-sel" data-id="${p.id}">
       <option value="new"            ${p.status==='new'           ?'selected':''}>🔵 New</option>
       <option value="visited"        ${p.status==='visited'       ?'selected':''}>✅ Visited</option>
-      <option value="demo-booked"    ${p.status==='demo-booked'   ?'selected':''}>📅 Demo booked</option>
       <option value="followup"       ${p.status==='followup'      ?'selected':''}>🔔 Follow-up</option>
       <option value="not-interested" ${p.status==='not-interested'?'selected':''}>❌ Not interested</option>
       <option value="won"            ${p.status==='won'           ?'selected':''}>📅 Demo Booked</option>
+              <option value="tm-customer" ${p.status==='tm-customer'?'selected':''}>🔧 TM Customer</option>
       <option value="skip"           ${p.status==='skip'          ?'selected':''}>⬜ Skip</option>
     </select>
     <button class="notes-btn ${hasNotes?'has':''}" data-id="${p.id}" title="Notes">📝</button>
@@ -3394,7 +3400,7 @@ function onStatus(sel, silent) {
   const card = document.getElementById('card-'+id);
   if(card){
     ['sv','sf','sw','sn','sd'].forEach(c=>card.classList.remove(c));
-    const cl={visited:'sv',followup:'sf',won:'sw','not-interested':'sn','demo-booked':'sd'}[sel.value];
+    const cl={visited:'sv',followup:'sf',won:'sw','not-interested':'sn','tm-customer':'stm'}[sel.value];
     if(cl) card.classList.add(cl);
   }
   if (!silent) updateStats();
@@ -3428,10 +3434,11 @@ function onNote(ta) {
 
 function updateStats() {
   document.getElementById('sTotal').textContent    = currentPlan.length;
-  const VISITED_STATUSES = ['visited','followup','won','not-interested'];
+  const VISITED_STATUSES = ['visited','followup','won','not-interested','tm-customer'];
   document.getElementById('sVisited').textContent  = currentPlan.filter(p=>VISITED_STATUSES.includes(p.status)).length;
   document.getElementById('sFollowup').textContent = currentPlan.filter(p=>p.status==='followup').length;
   document.getElementById('sWon').textContent      = currentPlan.filter(p=>p.status==='won').length;
+      document.getElementById('sTM').textContent      = currentPlan.filter(p=>p.status==='tm-customer').length;
   document.getElementById('sMitchell').textContent = currentPlan.filter(p=>icpScore(p)>=3).length;
 }
 
